@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "pixi"
+version = "0.0.1"
+description = "A command line tool to download images from Pixiv."
+authors = ["azuline <azuline@riseup.net>"]
+license = "Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/azuline/pixi"
+
+[tool.poetry.scripts]
+pixi = "pixi.__main__.commandgroup"
+
+[tool.poetry.dependencies]
+python = "^3.7"
+click = "^7.0"
+pixiv-api = "^0.1.0"
+appdirs = "^1.4"
+
+[tool.poetry.dev-dependencies]
+flake8 = "^3.7"
+isort = "^4.3"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
