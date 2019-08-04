@@ -1,11 +1,10 @@
-import unittest.mock as umock
+from pathlib import Path
 
-import mock
 import pytest
-from pixivapi import LoginError
+from click.testing import CliRunner
 
-from pixi.common import get_client, parse_id, format_filename
-from pixi.errors import GoAuthenticate, InvalidURL
+from pixi.common import check_duplicate, format_filename, parse_id
+from pixi.errors import InvalidURL
 
 
 @pytest.mark.parametrize(
@@ -39,27 +38,20 @@ def test_parse_id_invalid_url(string):
         )
 
 
-@mock.patch('pixi.common.Config')
-@mock.patch('pixi.common.Client')
-def test_get_client_no_refresh_token(_, config):
-    config.return_value = {'pixi': {'refresh_token': False}}
-    with pytest.raises(GoAuthenticate):
-        get_client()
+def test_check_duplicate_exists():
+    with CliRunner().isolated_filesystem():
+        path = Path.cwd() / 'file.jpg'
+        path.touch()
+        path.with_name('file (1).jpg').touch()
+        new_path = check_duplicate(path)
+        assert new_path == Path.cwd() / 'file (2).jpg'
 
 
-@umock.patch('pixi.common.Config')
-@umock.patch('pixi.common.Client')
-def test_get_client_crappy_refresh_token(client, config):
-    config.return_value = {'pixi': {'refresh_token': True}}
-    client.return_value.authenticate.side_effect = LoginError
-    with pytest.raises(GoAuthenticate):
-        get_client()
-
-
-@umock.patch('pixi.common.Config')
-@umock.patch('pixi.common.Client')
-def test_working_get_client(client, config):
-    get_client()
+def test_check_duplicate_doesnt_exist():
+    with CliRunner().isolated_filesystem():
+        path = Path.cwd() / 'file.jpg'
+        new_path = check_duplicate(path)
+        assert new_path == Path.cwd() / 'file.jpg'
 
 
 def test_format_filename():

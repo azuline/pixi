@@ -1,25 +1,7 @@
+import os
 from urllib import parse
 
-from pixivapi import LoginError
-
-from pixi.client import Client
-from pixi.config import Config
-from pixi.errors import GoAuthenticate, InvalidURL
-
-
-def get_client():
-    config = Config()
-    if not config['pixi']['refresh_token']:
-        raise GoAuthenticate
-
-    client = Client()
-
-    try:
-        client.authenticate(config['pixi']['refresh_token'])
-    except LoginError:
-        raise GoAuthenticate
-
-    return client
+from pixi.errors import InvalidURL
 
 
 def parse_id(string, path=None, param=None):
@@ -37,6 +19,16 @@ def parse_id(string, path=None, param=None):
             pass
 
     raise InvalidURL
+
+
+def check_duplicate(path):
+    new_path = path
+    dupe_number = 1
+    while new_path.exists():
+        name, ext = os.path.splitext(path.name)
+        new_path = path.with_name(f'{name} ({dupe_number}){ext}')
+        dupe_number += 1
+    return new_path
 
 
 def format_filename(id_, title):

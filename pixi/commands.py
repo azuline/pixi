@@ -1,11 +1,12 @@
 from pathlib import Path
 
 import click
-from pixivapi import BadApiResponse, Client, LoginError, Size
+from pixivapi import BadApiResponse, LoginError, Size
 from requests import RequestException
 
 from pixi import commandgroup
-from pixi.common import format_filename, get_client, parse_id
+from pixi.client import Client
+from pixi.common import format_filename, parse_id
 from pixi.config import CONFIG_PATH, Config
 from pixi.errors import DownloadError, PixiError
 
@@ -15,7 +16,7 @@ from pixi.errors import DownloadError, PixiError
 @click.option('--password', '-p', prompt='Password', hide_input=True)
 def auth(username, password):
     """Log into Pixiv and generate a refresh token."""
-    client = Client()
+    client = Client(authenticate=False)
 
     try:
         client.login(username, password)
@@ -52,7 +53,7 @@ def config():
 )
 def image(image, directory):
     """Download an image by URL or ID."""
-    client = get_client()
+    client = Client()
     illustration_id = parse_id(
         string=image,
         path='/member_illust.php',
