@@ -9,7 +9,7 @@ from pixi.errors import InvalidConfig, PixiError
 CONFIG_DIR = Path(user_config_dir('pixi', 'azuline'))
 CONFIG_PATH = CONFIG_DIR / 'config.ini'
 
-DEFAULT_CONFIG = {'pixi': {'download_directory': '', 'refresh_token': ''}}
+DEFAULT_CONFIG = {'pixi': {'refresh_token': '', 'download_directory': ''}}
 
 
 def make_config_directory():
