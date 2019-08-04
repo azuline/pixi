@@ -2,29 +2,23 @@ from urllib import parse
 
 from pixivapi import Client, LoginError
 
-from pixi import CONFIG_DIR
 from pixi.config import Config
-from pixi.errors import GoAuthenticate, InvalidURL, PixiError
+from pixi.errors import GoAuthenticate, InvalidURL
 
 
 def get_client():
     config = Config()
-    client = Client()
-
     if not config['refresh_token']:
         raise GoAuthenticate
 
-    try:
-        client.authenticate(config['refresh_token'])
-    except LoginError as e:
-        raise GoAuthenticate from e
+    client = Client()
 
-
-def make_config_directory():
     try:
-        CONFIG_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
-    except FileNotFoundError:
-        raise PixiError('Could not create configuration directory.')
+        client.authenticate(config['pixi']['refresh_token'])
+    except LoginError:
+        raise GoAuthenticate
+
+    return client
 
 
 def parse_id(string, path=None, param=None):

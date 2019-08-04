@@ -2,21 +2,31 @@ import os
 from configparser import ConfigParser
 
 from pixi import CONFIG_DIR
-from pixi.errors import InvalidConfig
+from pixi.errors import InvalidConfig, PixiError
 
 CONFIG_PATH = CONFIG_DIR / 'config.ini'
 
-DEFAULT_CONFIG = """
-[pixi]
-download_directory =
-refresh_token =
-"""
+DEFAULT_CONFIG = {
+    'pixi': {
+        'download_directory': '',
+        'refresh_token': '',
+    },
+}
 
 
-def write_default_config_if_doesnt_exist():
+def make_config_directory():
+    try:
+        CONFIG_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
+    except PermissionError:  # pragma: no cover
+        raise PixiError('Could not create configuration directory.')
+
+
+def write_default_config():
     if not CONFIG_PATH.exists():
+        parser = ConfigParser()
+        parser.read_dict(DEFAULT_CONFIG)
         with CONFIG_PATH.open('w') as f:
-            f.write(DEFAULT_CONFIG)
+            parser.write(f)
 
 
 class Config:
@@ -25,19 +35,26 @@ class Config:
     instantiated.
     """
 
-    __config = None
+    __parser = None
 
-    def __new__(cls):
-        if cls.__config is None:
-            cls.__config = _load_config()
-            _validate_config(cls.__config)
-        return cls.__config
+    def __new__(cls, validate=True):
+        if cls.__parser is None:
+            cls.__parser = _load_config()
+            if validate:
+                _validate_config(cls.__parser)
+        return cls.__parser
 
 
 def _load_config():
+    ConfigParser.save = _save_config
     config = ConfigParser()
     config.read(CONFIG_DIR / 'config.ini')
     return config
+
+
+def _save_config(parser):
+    with CONFIG_PATH.open('w') as f:
+        parser.write(f)
 
 
 def _validate_config(config):

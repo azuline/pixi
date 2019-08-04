@@ -1,3 +1,4 @@
+from configparser import ConfigParser
 from pathlib import Path
 
 import mock
@@ -5,10 +6,10 @@ import pytest
 from click.testing import CliRunner
 
 from pixi.config import (
-    DEFAULT_CONFIG,
     Config,
     _validate_config,
-    write_default_config_if_doesnt_exist,
+    make_config_directory,
+    write_default_config,
 )
 from pixi.errors import InvalidConfig
 
@@ -57,13 +58,23 @@ def test_validate_config_not_writeable():
     )
 
 
+def test_create_config_directory(monkeypatch):
+    with CliRunner().isolated_filesystem():
+        mock_dir = Path.cwd() / 'cfgdir'
+        monkeypatch.setattr('pixi.config.CONFIG_DIR', mock_dir)
+        make_config_directory()
+        assert mock_dir.is_dir()
+
+
 def test_write_default_config(monkeypatch):
     with CliRunner().isolated_filesystem():
         mock_config = Path.cwd() / 'config.ini'
         monkeypatch.setattr('pixi.config.CONFIG_PATH', mock_config)
-        write_default_config_if_doesnt_exist()
-        with mock_config.open('r') as f:
-            assert DEFAULT_CONFIG == f.read()
+        write_default_config()
+
+        parser = ConfigParser()
+        parser.read(mock_config)
+        assert 'pixi' in parser.sections()
 
 
 def test_dont_write_default_config(monkeypatch):
@@ -72,6 +83,6 @@ def test_dont_write_default_config(monkeypatch):
         with mock_config.open('w') as f:
             f.write('filler')
         monkeypatch.setattr('pixi.config.CONFIG_PATH', mock_config)
-        write_default_config_if_doesnt_exist()
+        write_default_config()
         with mock_config.open('r') as f:
             assert f.read() == 'filler'
