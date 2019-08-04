@@ -1,17 +1,15 @@
 import os
 from configparser import ConfigParser
+from pathlib import Path
 
-from pixi import CONFIG_DIR
+from appdirs import user_config_dir
+
 from pixi.errors import InvalidConfig, PixiError
 
+CONFIG_DIR = Path(user_config_dir('pixi', 'azuline'))
 CONFIG_PATH = CONFIG_DIR / 'config.ini'
 
-DEFAULT_CONFIG = {
-    'pixi': {
-        'download_directory': '',
-        'refresh_token': '',
-    },
-}
+DEFAULT_CONFIG = {'pixi': {'download_directory': '', 'refresh_token': ''}}
 
 
 def make_config_directory():
