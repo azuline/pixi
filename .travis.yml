@@ -8,4 +8,8 @@ install:
   - pip install poetry
   - poetry install
 script:
-  - make tests
+  - poetry run pytest --cov-report term-missing --cov-branch --cov=pixi tests/
+  - poetry run isort -rc -c .
+  - poetry run flake8
+after_success:
+  - coveralls

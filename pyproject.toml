@@ -22,6 +22,7 @@ isort = "^4.3"
 pytest = "^5.0"
 pytest-cov = "^2.7"
 mock = "^3.0"
+coveralls = "^1.8"
 
 [build-system]
 requires = ["poetry>=0.12"]
