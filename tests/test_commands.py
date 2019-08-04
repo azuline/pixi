@@ -2,10 +2,10 @@ from pathlib import Path
 
 import mock
 from click.testing import CliRunner
-from pixivapi import LoginError
 
-from pixi.commands import auth, config
-from pixi.errors import PixiError
+from pixi.commands import auth, config, image
+from pixi.errors import DownloadError, PixiError
+from pixivapi import BadApiResponse, LoginError, Size
 
 
 @mock.patch('pixi.commands.Config')
@@ -61,3 +61,35 @@ def test_edit_config_aborted(edit, monkeypatch):
 
         with config_path.open('r') as f:
             assert 'a bunch of text' == f.read()
+
+
+@mock.patch('pixi.commands.get_client')
+@mock.patch('pixi.commands.parse_id')
+@mock.patch('pixi.commands.format_filename')
+def test_download_image(format_filename, parse_id, get_client):
+    parse_id.return_value = 1
+    format_filename.return_value = '1. image'
+
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        CliRunner().invoke(image, ['1', '-d', Path.cwd()])
+        fetch_illustration = get_client.return_value.fetch_illustration
+        assert fetch_illustration.return_value.called_with(
+            directory=Path.cwd(),
+            size=Size.ORIGINAL,
+            filename='1. image',
+        )
+
+
+@mock.patch('pixi.commands.get_client')
+@mock.patch('pixi.commands.parse_id')
+@mock.patch('pixi.commands.format_filename')
+def test_download_image_error(format_filename, parse_id, get_client):
+    parse_id.return_value = 1
+    format_filename.return_value = '1. image'
+    get_client.return_value.fetch_illustration.side_effect = BadApiResponse
+
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        result = CliRunner().invoke(image, ['1', '-d', Path.cwd()])
+        assert isinstance(result.exception, DownloadError)

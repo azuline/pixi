@@ -18,8 +18,7 @@ def run():
     except InvalidConfig as e:
         click.echo(f'Invalid config: {e}. Edit the config with `pixi config`.')
     except DownloadError:
-        click.echo('Failed to download image.')
-        click.echo('Traceback:')
+        click.echo('Failed to download image.\n')
         traceback.print_exc()
     except PixiError as e:
         click.echo(e)

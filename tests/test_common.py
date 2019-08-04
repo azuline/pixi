@@ -63,4 +63,4 @@ def test_working_get_client(client, config):
 
 
 def test_format_filename():
-    assert 'id title' == format_filename('id', 'title')
+    assert 'id. title' == format_filename('id', 'title')
