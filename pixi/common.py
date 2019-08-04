@@ -1,7 +1,8 @@
 from urllib import parse
 
-from pixivapi import Client, LoginError
+from pixivapi import LoginError
 
+from pixi.client import Client
 from pixi.config import Config
 from pixi.errors import GoAuthenticate, InvalidURL
 

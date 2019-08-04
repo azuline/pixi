@@ -31,12 +31,14 @@ $ pipx install pixi
 
 Make sure the location that pixi installs to is a part of `$PATH`.
 
-After installation, configure pixi with the following command. Refer to the
-[configuration section](#Configuration) for details on configuration options.
+After installation, configure pixi with the following command.
 
 ```sh
 $ pixi config
 ```
+
+Refer to the [configuration section](#Configuration) for details on the various
+configuration options.
 
 Now you can begin downloading!
 
@@ -68,7 +70,7 @@ $ pixi bookmarks
 
 The public bookmarks of other users can also be downloaded.
 
-````sh
+```sh
 $ pixi bookmarks --user https://www.pixiv.net/member.php?id=2188232
 ```
 
@@ -85,7 +87,7 @@ following command.
 
 ```sh
 $ pixi --help image
-````
+```
 
 pixi keeps track of which images have been downloaded and will avoid
 downloading duplicate images. However, if you wish to re-download images,

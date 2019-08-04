@@ -1,13 +1,13 @@
 from pathlib import Path
 
 import click
+from pixivapi import BadApiResponse, Client, LoginError, Size
 from requests import RequestException
 
 from pixi import commandgroup
 from pixi.common import format_filename, get_client, parse_id
 from pixi.config import CONFIG_PATH, Config
 from pixi.errors import DownloadError, PixiError
-from pixivapi import BadApiResponse, Client, LoginError, Size
 
 
 @commandgroup.command()
@@ -64,6 +64,17 @@ def image(image, directory):
         directory = Path(directory or Config()['pixi']['download_directory'])
         filename = format_filename(illustration.id, illustration.title)
 
+        if illustration.meta_pages:
+            click.echo(
+                'Downloading multi-page illustration '
+                f'{illustration_id}. {illustration.title}.\n'
+            )
+        else:
+            click.echo(
+                f'Downloading illustration {illustration_id}. '
+                f'{illustration.title}.\n'
+            )
+
         illustration.download(
             directory=directory,
             size=Size.ORIGINAL,
@@ -71,5 +82,3 @@ def image(image, directory):
         )
     except (BadApiResponse, RequestException) as e:
         raise DownloadError from e
-
-    click.echo(f'Successfully downloaded image to {directory}/{filename}.')
