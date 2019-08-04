@@ -14,5 +14,9 @@ class InvalidURL(PixiError):
     pass
 
 
-class DownloadError(PixiError):
+class DownloadFailed(PixiError):
+    pass
+
+
+class DuplicateImage(PixiError):
     pass

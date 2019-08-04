@@ -5,7 +5,7 @@
 [![Pypi](https://img.shields.io/pypi/v/pixi.svg)](https://pypi.python.org/pypi/pixi)
 [![Pyversions](https://img.shields.io/pypi/pyversions/pixi.svg)](https://pypi.python.org/pypi/pixi)
 
-A command line tool to download images from Pixiv.
+A command line tool to download illustrations from Pixiv.
 
 ```
 Usage: pixi [OPTIONS] COMMAND [ARGS]...
@@ -14,9 +14,13 @@ Options:
   --help  Show this message and exit.
 
 Commands:
-  auth    Log into Pixiv and generate a refresh token.
-  config  Edit the config file.
-  image   Download an image by URL or ID.
+  artist    Download illustrations of an artist by URL or ID.
+  auth      Log into Pixiv and generate a refresh token.
+  bookmark  Download illustrations bookmarked by a user.
+  config    Edit the config file.
+  failed    View illustrations that failed to download.
+  illust    Download an illustration by URL or ID.
+  wipe      Wipe the saved history of downloaded illustrations.
 ```
 
 ## Usage
@@ -42,21 +46,22 @@ configuration options.
 
 Now you can begin downloading!
 
-For example, the following commands download an image. pixi accepts both a URL
-to the image as well as just the image ID. The same applies to all inputs that
-accept ID values.
+For example, the following commands download an illustration. pixi accepts both
+a URL to the illustration as well as just the illustration ID. The same applies
+to all inputs that accept ID values.
 
 ```sh
-$ pixi image https://www.pixiv.net/member_illust.php?mode=medium&illust_id=64930973
+$ pixi illustration https://www.pixiv.net/member_illust.php?mode=medium&illust_id=64930973
 ```
 
 ```sh
-$ pixi image 64930973
+$ pixi illustration 64930973
 ```
 
 TODO Implementation of the following commands:
 
-Downloading all the images of an artist can be done with the following command.
+Downloading all the illustrations of an artist can be done with the following
+command.
 
 ```sh
 $ pixi artist https://www.pixiv.net/member.php?id=2188232
@@ -78,26 +83,43 @@ And the following command downloads all bookmarks matching a user-assigned
 bookmark tag.
 
 ```sh
-$ pixi bookmarks --tag="has cats"
+$ pixi bookmarks --tag "has cats"
 ```
 
 To view all the options available to a specific command, run the command with
-the `--help` flag. For example, `image`'s options can be viewed with the
+the `--help` flag. For example, `illustration`'s options can be viewed with the
 following command.
 
 ```sh
-$ pixi --help image
+$ pixi --help illustration
 ```
 
-pixi keeps track of which images have been downloaded and will avoid
-downloading duplicate images. However, if you wish to re-download images,
-pass the `--ignore-duplicates` flag.
+When downloading many images from an artist or a user's bookmarks, an image
+can occasionally fail to download. If an image fails to download after several
+retries, it will be recorded and skipped. Failed images can be viewed with the
+following command.
+
+```sh
+$ pixi failed
+```
+
+If an image on the failed list is successfully downloaded, it will
+automatically be removed from the list. To wipe the entire failed list, the
+following command should be run.
+
+```sh
+$ pixi wipe --table=failed
+```
+
+pixi also keeps track of which illustrations have been downloaded and will avoid
+downloading duplicate illustrations. However, if you wish to re-download
+illustrations, pass the `--ignore-duplicates` (or `-i`) flag.
 
 If you wish to wipe the database of tracked downloads, run the following
 command and confirm the action.
 
 ```sh
-$ pixi wipe
+$ pixi wipe --table=downloads
 ```
 
 END TODO
@@ -111,7 +133,7 @@ below. To run pixi, a default download directory must be configured.
 [pixi]
 ; Leave this blank; the script will auto-populate it.
 refresh_token =
-; The default directory for images to be downloaded to.
+; The default directory for iillustrations to be downloaded to.
 download_directory = /home/azuline/images/pixiv
 ```
 

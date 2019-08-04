@@ -4,7 +4,7 @@ from pixivapi import Client as BaseClient
 from pixivapi import LoginError
 from tqdm import tqdm
 
-from pixi.common import check_duplicate
+from pixi.common import rename_duplicate_file
 from pixi.config import Config
 from pixi.errors import GoAuthenticate
 
@@ -46,10 +46,13 @@ class _PixivClient(BaseClient):
             url, headers={'Referer': referer}, stream=True
         )
 
-        destination = check_duplicate(destination)
+        destination = rename_duplicate_file(destination)
         with destination.open('wb') as f:
             for chunk in tqdm(
                 iterable=response.iter_content(chunk_size=1024),
                 total=ceil(int(response.headers['Content-Length']) / 1024),
+                # ascii='#',
+                unit='KB',
+                unit_scale=True,
             ):
                 f.write(chunk)

@@ -42,8 +42,8 @@ def test_get_client_no_authentication(authenticate, config):
 
 
 @mock.patch('pixi.client.ceil')
-@mock.patch('pixi.client.check_duplicate')
-def test_client_download(check_duplicate, ceil):
+@mock.patch('pixi.client.rename_duplicate_file')
+def test_client_download(rename_duplicate_file, ceil):
     @dataclass
     class RequestResponse:
         headers = {'Content-Length': 3072}
@@ -53,7 +53,7 @@ def test_client_download(check_duplicate, ceil):
 
     with CliRunner().isolated_filesystem():
         destination = Path.cwd() / 'filename.jpg'
-        check_duplicate.return_value = destination
+        rename_duplicate_file.return_value = destination
         ceil.return_value = 3
 
         _PixivClient.authenticate = None
