@@ -8,7 +8,7 @@ from pixi.errors import GoAuthenticate, InvalidURL
 
 def get_client():
     config = Config()
-    if not config['refresh_token']:
+    if not config['pixi']['refresh_token']:
         raise GoAuthenticate
 
     client = Client()

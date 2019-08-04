@@ -1,7 +1,11 @@
-import pytest
+import unittest.mock as umock
 
-from pixi.common import parse_id
-from pixi.errors import InvalidURL
+import mock
+import pytest
+from pixivapi import LoginError
+
+from pixi.common import get_client, parse_id
+from pixi.errors import GoAuthenticate, InvalidURL
 
 
 @pytest.mark.parametrize(
@@ -33,3 +37,26 @@ def test_parse_id_invalid_url(string):
             path='/member_illust.php',
             param='illust_id',
         )
+
+
+@mock.patch('pixi.common.Config')
+@mock.patch('pixi.common.Client')
+def test_get_client_no_refresh_token(_, config):
+    config.return_value = {'pixi': {'refresh_token': False}}
+    with pytest.raises(GoAuthenticate):
+        get_client()
+
+
+@umock.patch('pixi.common.Config')
+@umock.patch('pixi.common.Client')
+def test_get_client_crappy_refresh_token(client, config):
+    config.return_value = {'pixi': {'refresh_token': True}}
+    client.return_value.authenticate.side_effect = LoginError
+    with pytest.raises(GoAuthenticate):
+        get_client()
+
+
+@umock.patch('pixi.common.Config')
+@umock.patch('pixi.common.Client')
+def test_working_get_client(client, config):
+    get_client()

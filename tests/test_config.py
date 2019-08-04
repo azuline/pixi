@@ -25,7 +25,6 @@ def test_validate_config_successful():
     with CliRunner().isolated_filesystem():
         test_dir = Path.cwd() / 'tmp'
         test_dir.mkdir()
-
         _validate_config({'pixi': {'download_directory': str(test_dir)}})
 
 
@@ -56,6 +55,20 @@ def test_validate_config_not_writeable():
     assert str(e.value) == (
         'Download directory does not exist or is not writeable'
     )
+
+
+def test_save_config(monkeypatch):
+    with CliRunner().isolated_filesystem():
+        mock_config = Path.cwd() / 'config.ini'
+        monkeypatch.setattr('pixi.config.CONFIG_PATH', mock_config)
+
+        config = Config()
+        config['pixi'] = {'test': 'balls'}
+        config.save()
+
+        parser = ConfigParser()
+        parser.read(mock_config)
+        assert parser['pixi']['test'] == 'balls'
 
 
 def test_create_config_directory(monkeypatch):
