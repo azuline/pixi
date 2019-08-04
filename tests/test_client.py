@@ -1,8 +1,12 @@
+from dataclasses import dataclass
+from pathlib import Path
+
 import mock
 import pytest
+from click.testing import CliRunner
 from pixivapi import LoginError
 
-from pixi.client import Client
+from pixi.client import Client, _PixivClient
 from pixi.errors import GoAuthenticate
 
 
@@ -35,3 +39,27 @@ def test_get_client_no_authentication(authenticate, config):
     config.return_value = {'pixi': {'refresh_token': False}}
     authenticate.side_effect = LoginError
     Client(authenticate=False)
+
+
+@mock.patch('pixi.client.ceil')
+@mock.patch('pixi.client.check_duplicate')
+def test_client_download(check_duplicate, ceil):
+    @dataclass
+    class RequestResponse:
+        headers = {'Content-Length': 3072}
+
+        def iter_content(*args, **kwargs):
+            return iter([b'a', b'b'])
+
+    with CliRunner().isolated_filesystem():
+        destination = Path.cwd() / 'filename.jpg'
+        check_duplicate.return_value = destination
+        ceil.return_value = 3
+
+        _PixivClient.authenticate = None
+        client = _PixivClient(authenticate=False)
+        client.session.get = lambda *a, **k: RequestResponse()
+        client.download('haha not a url', destination)
+
+        with destination.open('r') as f:
+            assert 'ab' == f.read()
