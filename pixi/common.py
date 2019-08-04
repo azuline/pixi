@@ -36,3 +36,7 @@ def parse_id(string, path=None, param=None):
             pass
 
     raise InvalidURL
+
+
+def format_filename(id_, title):
+    return f'{id_}. {title}'

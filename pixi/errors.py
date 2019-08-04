@@ -12,3 +12,7 @@ class InvalidConfig(PixiError):
 
 class InvalidURL(PixiError):
     pass
+
+
+class DownloadError(PixiError):
+    pass

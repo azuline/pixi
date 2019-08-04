@@ -4,7 +4,7 @@ import mock
 import pytest
 from pixivapi import LoginError
 
-from pixi.common import get_client, parse_id
+from pixi.common import get_client, parse_id, format_filename
 from pixi.errors import GoAuthenticate, InvalidURL
 
 
@@ -60,3 +60,7 @@ def test_get_client_crappy_refresh_token(client, config):
 @umock.patch('pixi.common.Client')
 def test_working_get_client(client, config):
     get_client()
+
+
+def test_format_filename():
+    assert 'id title' == format_filename('id', 'title')

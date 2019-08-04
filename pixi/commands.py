@@ -1,10 +1,13 @@
+from pathlib import Path
+
 import click
-from pixivapi import Client, LoginError
+from requests import RequestException
 
 from pixi import commandgroup
-from pixi.common import get_client, parse_id
+from pixi.common import format_filename, get_client, parse_id
 from pixi.config import CONFIG_PATH, Config
-from pixi.errors import PixiError
+from pixi.errors import DownloadError, PixiError
+from pixivapi import BadApiResponse, Client, LoginError, Size
 
 
 @commandgroup.command()
@@ -42,7 +45,12 @@ def config():
 
 @commandgroup.command()
 @click.argument('image', nargs=1)
-def image(image):
+@click.option(
+    '--directory', '-d',
+    type=click.Path(exists=True, file_okay=False),
+    help='Config override for download directory.'
+)
+def image(image, directory):
     """Download an image by URL or ID."""
     client = get_client()
     illustration_id = parse_id(
@@ -50,5 +58,18 @@ def image(image):
         path='/member_illust.php',
         param='illust_id',
     )
-    illustration = client.fetch_illustration(illustration_id)
-    illustration.download()
+
+    try:
+        illustration = client.fetch_illustration(illustration_id)
+        directory = Path(directory or Config()['pixi']['download_directory'])
+        filename = format_filename(illustration.id, illustration.title)
+
+        illustration.download(
+            directory=directory,
+            size=Size.ORIGINAL,
+            filename=filename,
+        )
+    except (BadApiResponse, RequestException) as e:
+        raise DownloadError from e
+
+    click.echo(f'Successfully downloaded image to {directory}/{filename}.')
