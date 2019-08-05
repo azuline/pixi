@@ -4,7 +4,8 @@ import mock
 from click.testing import CliRunner
 from pixivapi import LoginError
 
-from pixi.commands import auth, config
+from pixi.commands import auth, config, migrate
+from pixi.database import Migration, database
 from pixi.errors import PixiError
 
 
@@ -61,3 +62,43 @@ def test_edit_config_aborted(edit, monkeypatch):
 
         with config_path.open('r') as f:
             assert 'a bunch of text' == f.read()
+
+
+@mock.patch('pixi.commands.calculate_migrations_needed')
+def test_migrate(calculate, monkeypatch):
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        fake_mig = Path.cwd() / '0001.sql'
+        with fake_mig.open('w') as f:
+            f.write('INSERT INTO test (id) VALUES (29)')
+
+        monkeypatch.setattr(
+            'pixi.database.DATABASE_PATH', Path.cwd() / 'db.sqlite3'
+        )
+        with database() as (conn, cursor):
+            cursor.execute('CREATE TABLE test (id INTEGER PRIMARY KEY)')
+            cursor.execute(
+                'CREATE TABLE versions (version INTEGER PRIMARY KEY)'
+            )
+            conn.commit()
+
+        calculate.return_value = [Migration(path=fake_mig, version=9)]
+        runner.invoke(migrate)
+
+        with database() as (conn, cursor):
+            cursor.execute('SELECT version FROM versions')
+            assert 9 == cursor.fetchone()[0]
+            cursor.execute('SELECT id FROM test')
+            assert 29 == cursor.fetchone()[0]
+
+
+@mock.patch('pixi.commands.calculate_migrations_needed')
+def test_migrate_not_needed(calculate, monkeypatch):
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        monkeypatch.setattr(
+            'pixi.database.DATABASE_PATH', Path.cwd() / 'db.sqlite3'
+        )
+        calculate.return_value = []
+        result = runner.invoke(migrate)
+        assert isinstance(result.exception, SystemExit)

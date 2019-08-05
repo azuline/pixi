@@ -1,4 +1,5 @@
 import functools
+import sys
 
 import click
 from pixivapi import BadApiResponse, LoginError
@@ -63,6 +64,26 @@ def config():
             click.echo('Edit completed.')
         else:
             click.echo('Edit aborted.')
+
+
+@commandgroup.command()
+def migrate():
+    """Upgrade the database to the latest migration."""
+    migrations_needed = calculate_migrations_needed()
+
+    if not migrations_needed:
+        click.echo('Database is up to date.')
+        sys.exit(1)
+
+    with database() as (conn, cursor):
+        for mig in migrations_needed:
+            with mig.path.open() as sql:
+                cursor.executescript(sql.read())
+                cursor.execute(
+                    'INSERT INTO versions (version) VALUES (?)',
+                    (mig.version, ),
+                )
+            conn.commit()
 
 
 @commandgroup.command()
@@ -171,23 +192,3 @@ def failed():
 def wipe():
     """Wipe the saved history of downloaded illustrations."""
     pass
-
-
-@commandgroup.command()
-def migrate():
-    """Upgrade the database to the latest migration."""
-    migrations_needed = calculate_migrations_needed()
-
-    if not migrations_needed:
-        click.echo('Database is up to date.')
-        exit()
-
-    with database() as (conn, cursor):
-        for mig in migrations_needed:
-            with mig.path.open() as sql:
-                cursor.executescript(sql.read())
-                cursor.execute(
-                    'INSERT INTO versions (source, version) VALUES (?, ?)',
-                    (mig.source, mig.version)
-                )
-            conn.commit()
