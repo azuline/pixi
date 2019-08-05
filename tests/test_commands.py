@@ -1,10 +1,22 @@
 from pathlib import Path
+from shutil import copyfile
 
+import click
 import mock
 from click.testing import CliRunner
 from pixivapi import BadApiResponse, LoginError, Visibility
 
-from pixi.commands import artist, auth, bookmarks, config, illust, migrate
+from pixi.commands import (
+    _confirm_table_wipe,
+    artist,
+    auth,
+    bookmarks,
+    config,
+    failed,
+    illust,
+    migrate,
+    wipe,
+)
 from pixi.database import Migration, database
 from pixi.errors import DownloadFailed, PixiError
 
@@ -175,3 +187,127 @@ def test_bookmarks_with_visibility(_, client, download_pages):
         visibility=Visibility.PUBLIC,
         tag=None,
     )
+
+
+def test_failed(monkeypatch):
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        db_path = Path.cwd() / 'db.sqlite3'
+        copyfile(Path(__file__).parent / 'test.db', db_path)
+        monkeypatch.setattr('pixi.database.DATABASE_PATH', db_path)
+        with database() as (conn, cursor):
+            cursor.execute(
+                """
+                INSERT INTO FAILED (id, artist, title, time)
+                VALUES (?, ?, ?, ?)
+                """,
+                (
+                    20,
+                    'testing',
+                    'illustration',
+                    '2019-01-01T01:23:45-04:00',
+                )
+            )
+
+        result = runner.invoke(failed)
+        assert result.output == (
+            'Jan 01, 2019 01:23:45 | testing - illustration\n'
+            'URL: https://www.pixiv.net/member_illust.php?mode=medium'
+            '&illust_id=20\n\n'
+        )
+
+
+@mock.patch('pixi.commands._confirm_table_wipe')
+def test_wipe(_, monkeypatch):
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        db_path = Path.cwd() / 'db.sqlite3'
+        copyfile(Path(__file__).parent / 'test.db', db_path)
+        monkeypatch.setattr('pixi.database.DATABASE_PATH', db_path)
+
+        with database() as (conn, cursor):
+            cursor.execute(
+                'INSERT INTO downloaded (id, path) VALUES (1, "a")'
+            )
+            cursor.execute(
+                'INSERT INTO FAILED (id, artist, title) VALUES (1, "a", "b")'
+            )
+            conn.commit()
+
+        runner.invoke(wipe, '--table=all')
+
+        with database() as (conn, cursor):
+            cursor.execute('SELECT 1 FROM downloaded')
+            assert not cursor.fetchone()
+            cursor.execute('SELECT 1 FROM failed')
+            assert not cursor.fetchone()
+
+
+@mock.patch('pixi.commands._confirm_table_wipe')
+def test_wipe_single(_, monkeypatch):
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        db_path = Path.cwd() / 'db.sqlite3'
+        copyfile(Path(__file__).parent / 'test.db', db_path)
+        monkeypatch.setattr('pixi.database.DATABASE_PATH', db_path)
+
+        with database() as (conn, cursor):
+            cursor.execute(
+                'INSERT INTO downloaded (id, path) VALUES (1, "a")'
+            )
+            cursor.execute(
+                'INSERT INTO FAILED (id, artist, title) VALUES (1, "a", "b")'
+            )
+            conn.commit()
+
+        runner.invoke(wipe, '--table=failed')
+
+        with database() as (conn, cursor):
+            cursor.execute('SELECT 1 FROM downloaded')
+            assert cursor.fetchone()
+            cursor.execute('SELECT 1 FROM failed')
+            assert not cursor.fetchone()
+
+
+@mock.patch('pixi.commands._confirm_table_wipe')
+def test_wipe_failed(confirm, monkeypatch):
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        db_path = Path.cwd() / 'db.sqlite3'
+        copyfile(Path(__file__).parent / 'test.db', db_path)
+        monkeypatch.setattr('pixi.database.DATABASE_PATH', db_path)
+        confirm.side_effect = click.Abort
+
+        with database() as (conn, cursor):
+            cursor.execute(
+                'INSERT INTO downloaded (id, path) VALUES (1, "a")'
+            )
+            cursor.execute(
+                'INSERT INTO FAILED (id, artist, title) VALUES (1, "a", "b")'
+            )
+            conn.commit()
+
+        result = runner.invoke(wipe, '--table=all')
+        assert isinstance(result.exception, SystemExit)
+
+        with database() as (conn, cursor):
+            cursor.execute('SELECT 1 FROM downloaded')
+            assert cursor.fetchone()
+            cursor.execute('SELECT 1 FROM failed')
+            assert cursor.fetchone()
+
+
+def test_confirm_table_wipe():
+    result = CliRunner().invoke(
+        click.command()(lambda: _confirm_table_wipe('table')),
+        input='table',
+    )
+    assert not result.exception
+
+
+def test_confirm_table_wipe_fail():
+    result = CliRunner().invoke(
+        click.command()(lambda: _confirm_table_wipe('table')),
+        input='not table',
+    )
+    assert isinstance(result.exception, SystemExit)

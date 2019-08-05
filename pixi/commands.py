@@ -1,4 +1,5 @@
 import sys
+from datetime import datetime
 from pathlib import Path
 
 import click
@@ -191,17 +192,50 @@ def bookmarks(
 @commandgroup.command()
 def failed():
     """View illustrations that failed to download."""
-    # TODO
-    pass
+    with database() as (conn, cursor):
+        cursor.execute(
+            """
+            SELECT
+                id,
+                artist,
+                title,
+                time
+            FROM failed
+            ORDER BY time DESC
+            """
+        )
+        for row in cursor.fetchall():
+            time = datetime.fromisoformat(row['time']).strftime(
+                '%b %d, %Y %H:%M:%S'
+            )
+            click.echo(f'{time} | {row["artist"]} - {row["title"]}')
+            click.echo(
+                'URL: https://www.pixiv.net/member_illust.php?mode=medium'
+                f'&illust_id={row["id"]}\n'
+            )
 
 
 @commandgroup.command()
 @click.option(
     '--table', '-t',
-    type=click.Choice(['downloads', 'failed']),
-    help='Which table to delete; leave blank to wipe everything.'
+    type=click.Choice(['downloaded', 'failed', 'all']),
+    required=True,
+    help='The table to wipe.',
 )
-def wipe():
+def wipe(table):
     """Wipe the saved history of downloaded illustrations."""
-    # TODO
-    pass
+    tables = ['downloaded', 'failed'] if table == 'all' else [table]
+    with database() as (conn, cursor):
+        for t in tables:
+            _confirm_table_wipe(t)
+            cursor.execute(f'DELETE FROM {t}')
+            click.echo(f'Wiped the {t} table.')
+        conn.commit()
+
+
+def _confirm_table_wipe(table):
+    confirmation = click.prompt(
+        f'Enter "{table}" to confirm that you wish to wipe {table}'
+    )
+    if confirmation != table:
+        raise click.Abort
