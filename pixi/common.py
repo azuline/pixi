@@ -7,7 +7,8 @@ from pixivapi import BadApiResponse, Size
 from requests import RequestException
 
 from pixi.config import Config
-from pixi.errors import DownloadFailed, InvalidURL
+from pixi.database import database
+from pixi.errors import DownloadFailed, DuplicateImage, InvalidURL
 
 
 def parse_id(string, path=None, param=None):
@@ -41,7 +42,22 @@ def format_filename(id_, title):
     return f'{id_}. {title}'
 
 
-def download_image(illustration, directory=None, tries=1):
+def resolve_track_download(track_download, directory):
+    if track_download is None:
+        return not directory
+    return track_download
+
+
+def download_image(
+    illustration,
+    directory=None,
+    tries=1,
+    ignore_duplicate=False,
+    track_download=True,
+):
+    if not ignore_duplicate:
+        check_duplicate(illustration.id)
+
     for attempt in range(tries):
         try:
             config_directory = Config()['pixi']['download_directory']
@@ -64,8 +80,12 @@ def download_image(illustration, directory=None, tries=1):
                 size=Size.ORIGINAL,
                 filename=filename,
             )
-            clear_failed(illustration.id)
+
             click.echo()
+            clear_failed(illustration.id)
+            if track_download:
+                record_download(illustration.id, directory)
+
             break
         except (BadApiResponse, RequestException) as e:
             click.echo(
@@ -79,12 +99,54 @@ def download_image(illustration, directory=None, tries=1):
 
 
 def mark_failed(illustration):
-    pass
+    with database() as (conn, cursor):
+        cursor.execute(
+            """
+            INSERT OR IGNORE INTO failed (id, artist, title) VALUES (?, ?, ?)
+            """,
+            (
+                illustration.id,
+                illustration.user.account,
+                illustration.title,
+            )
+        )
 
 
 def clear_failed(illustration_id):
-    pass
+    with database() as (conn, cursor):
+        cursor.execute(
+            """
+            DELETE FROM failed WHERE id = ?
+            """,
+            (
+                illustration_id,
+            )
+        )
+
+
+def record_download(illustration_id, path):
+    with database() as (conn, cursor):
+        cursor.execute(
+            """
+            INSERT INTO downloaded (id, path) VALUES (?, ?)
+            """,
+            (
+                illustration_id,
+                path,
+            )
+        )
 
 
 def check_duplicate(illustration_id):
-    pass
+    with database() as (conn, cursor):
+        cursor.execute(
+            """
+            SELECT path FROM downloaded WHERE id = ?
+            """,
+            (
+                illustration_id,
+            )
+        )
+        row = cursor.fetchone()
+        if row:
+            raise DuplicateImage(row['path'])

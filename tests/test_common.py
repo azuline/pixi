@@ -67,7 +67,10 @@ def test_format_filename():
 
 @mock.patch('pixi.common.format_filename')
 @mock.patch('pixi.common.Config')
-def test_download_illust(_, format_filename):
+@mock.patch('pixi.common.check_duplicate')
+@mock.patch('pixi.common.clear_failed')
+@mock.patch('pixi.common.record_download')
+def test_download_illust(_, __, ___, ____, format_filename):
     format_filename.return_value = '1. image'
     illustration = mock.Mock()
     illustration.client = mock
@@ -85,7 +88,9 @@ def test_download_illust(_, format_filename):
 
 @mock.patch('pixi.common.format_filename')
 @mock.patch('pixi.common.Config')
-def test_download_illust_error(_, format_filename):
+@mock.patch('pixi.common.check_duplicate')
+@mock.patch('pixi.common.mark_failed')
+def test_download_illust_error(_, __, ___, format_filename):
     format_filename.return_value = '1. image'
     illustration = mock.Mock()
     illustration.download.side_effect = BadApiResponse

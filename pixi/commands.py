@@ -7,30 +7,41 @@ from requests import RequestException
 
 from pixi import commandgroup
 from pixi.client import Client
-from pixi.common import download_image, parse_id
+from pixi.common import download_image, parse_id, resolve_track_download
 from pixi.config import CONFIG_PATH, Config
 from pixi.database import calculate_migrations_needed, database
 from pixi.errors import DownloadFailed, PixiError
 
-SHARED_OPTIONS = [
-    click.option(
-        '--directory', '-d',
-        type=click.Path(exists=True, file_okay=False),
-        help='Config override for download directory.'
-    ),
-    click.option(
-        '--ignore-duplicates', '-i',
-        is_flag=True,
-        default=False,
-        help='Downloads illustrations even if previously downloaded.',
-    ),
-]
+
+def download_directory(func):
+    return functools.wraps(func)(
+        click.option(
+            '--directory', '-d',
+            type=click.Path(exists=True, file_okay=False),
+            help='Config override for download directory.'
+        )(func)
+    )
 
 
-def shared_options(func):
-    for decorator in SHARED_OPTIONS:
-        func = functools.wraps(func)(decorator(func))
-    return func
+def ignore_duplicates(func):
+    return functools.wraps(func)(
+        click.option(
+            '--ignore-duplicates', '-i',
+            is_flag=True,
+            default=False,
+            help='Downloads illustrations even if previously downloaded.',
+        )(func)
+    )
+
+
+def track_download(func):
+    return functools.wraps(func)(
+        click.option(
+            '--track/--no-track', '-tr/-nt',
+            default=None,
+            help='Record the downloaded image to avoid future duplicates.'
+        )(func)
+    )
 
 
 @commandgroup.command()
@@ -94,13 +105,18 @@ def migrate():
         parse_id(value, path='/member_illust.php', param='illust_id')
     ),
 )
-@shared_options
-def illust(illustration, directory, ignore_duplicates):
+@download_directory
+@track_download
+@ignore_duplicates
+@track_download
+def illust(illustration, directory, ignore_duplicates, track):
     """Download an illustration by URL or ID."""
     try:
         download_image(
             Client().fetch_illustration(illustration),
             directory=directory,
+            ignore_duplicate=ignore_duplicates,
+            track_download=resolve_track_download(track_download, directory),
         )
     except (BadApiResponse, RequestException) as e:
         raise DownloadFailed from e
@@ -121,8 +137,10 @@ def illust(illustration, directory, ignore_duplicates):
     default=1,
     help='Page of artist\'s works to start downloading on.',
 )
-@shared_options
-def artist(artist, page, directory, ignore_duplicates):
+@download_directory
+@ignore_duplicates
+@track_download
+def artist(artist, page, directory, ignore_duplicates, track):
     """Download illustrations of an artist by URL or ID."""
     client = Client()
 
@@ -136,7 +154,15 @@ def artist(artist, page, directory, ignore_duplicates):
         )
         for illustration in response['illustrations']:
             try:
-                download_image(illustration, directory=directory, tries=3)
+                download_image(
+                    illustration,
+                    directory=directory,
+                    tries=3,
+                    ignore_duplicates=ignore_duplicates,
+                    track_download=(
+                        resolve_track_download(track_download, directory)
+                    ),
+                )
             except DownloadFailed:
                 click.echo(
                     f'Failed to download image {illustration.id}. '
@@ -156,7 +182,7 @@ def artist(artist, page, directory, ignore_duplicates):
     '--user', '-u',
     help='The user whose bookmarks to download. Default logged in account.',
     callback=lambda ctx, param, value: (
-        parse_id(value, path='/member.php', param='id')
+        parse_id(value, path='/member.php', param='id') if value else None
     ),
 )
 @click.option(
@@ -171,15 +197,19 @@ def artist(artist, page, directory, ignore_duplicates):
     '--tag', '-t',
     help='The bookmark tag to filter bookmarks by.',
 )
-@shared_options
-def bookmark(user, visibility, tag, directory, ignore_duplicates):
+@download_directory
+@ignore_duplicates
+@track_download
+def bookmark(user, visibility, tag, directory, ignore_duplicates, track):
     """Download illustrations bookmarked by a user."""
+    # TODO
     pass
 
 
 @commandgroup.command()
 def failed():
     """View illustrations that failed to download."""
+    # TODO
     pass
 
 
@@ -191,4 +221,5 @@ def failed():
 )
 def wipe():
     """Wipe the saved history of downloaded illustrations."""
+    # TODO
     pass
