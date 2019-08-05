@@ -8,6 +8,7 @@ from pixi import commandgroup
 from pixi.client import Client
 from pixi.common import download_image, parse_id
 from pixi.config import CONFIG_PATH, Config
+from pixi.database import calculate_migrations_needed, database
 from pixi.errors import DownloadFailed, PixiError
 
 SHARED_OPTIONS = [
@@ -103,6 +104,7 @@ def illust(illustration, directory, ignore_duplicates):
 def artist(artist, page, directory, ignore_duplicates):
     """Download illustrations of an artist by URL or ID."""
     client = Client()
+
     response = client.fetch_user_illustrations(artist, offset=(page - 1) * 30)
     if not response['illustrations']:
         raise PixiError('No illustrations found.')
@@ -169,3 +171,23 @@ def failed():
 def wipe():
     """Wipe the saved history of downloaded illustrations."""
     pass
+
+
+@commandgroup.command()
+def migrate():
+    """Upgrade the database to the latest migration."""
+    migrations_needed = calculate_migrations_needed()
+
+    if not migrations_needed:
+        click.echo('Database is up to date.')
+        exit()
+
+    with database() as (conn, cursor):
+        for mig in migrations_needed:
+            with mig.path.open() as sql:
+                cursor.executescript(sql.read())
+                cursor.execute(
+                    'INSERT INTO versions (source, version) VALUES (?, ?)',
+                    (mig.source, mig.version)
+                )
+            conn.commit()

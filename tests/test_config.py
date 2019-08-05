@@ -5,12 +5,8 @@ import mock
 import pytest
 from click.testing import CliRunner
 
-from pixi.config import (
-    Config,
-    _validate_config,
-    make_config_directory,
-    write_default_config,
-)
+from pixi import make_app_directories
+from pixi.config import Config, _validate_config, write_default_config
 from pixi.errors import InvalidConfig
 
 
@@ -71,11 +67,13 @@ def test_save_config(monkeypatch):
         assert parser['pixi']['test'] == 'balls'
 
 
-def test_create_config_directory(monkeypatch):
+def test_create_app_directories(monkeypatch):
     with CliRunner().isolated_filesystem():
         mock_dir = Path.cwd() / 'cfgdir'
-        monkeypatch.setattr('pixi.config.CONFIG_DIR', mock_dir)
-        make_config_directory()
+        mock_dir2 = Path.cwd() / 'datadir'
+        monkeypatch.setattr('pixi.CONFIG_DIR', mock_dir)
+        monkeypatch.setattr('pixi.DATA_DIR', mock_dir2)
+        make_app_directories()
         assert mock_dir.is_dir()
 
 

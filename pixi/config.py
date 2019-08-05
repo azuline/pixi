@@ -1,22 +1,12 @@
 import os
 from configparser import ConfigParser
-from pathlib import Path
 
-from appdirs import user_config_dir
+from pixi import CONFIG_DIR
+from pixi.errors import InvalidConfig
 
-from pixi.errors import InvalidConfig, PixiError
-
-CONFIG_DIR = Path(user_config_dir('pixi', 'azuline'))
 CONFIG_PATH = CONFIG_DIR / 'config.ini'
 
 DEFAULT_CONFIG = {'pixi': {'refresh_token': '', 'download_directory': ''}}
-
-
-def make_config_directory():
-    try:
-        CONFIG_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
-    except PermissionError:  # pragma: no cover
-        raise PixiError('Could not create configuration directory.')
 
 
 def write_default_config():
