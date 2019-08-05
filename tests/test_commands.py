@@ -115,7 +115,7 @@ def test_illust(_, client, download_image):
             '--directory',
             str(Path.cwd()),
             '--no-track',
-            '--ignore-duplicates',
+            '--allow-duplicates',
             'https://www.pixiv.net/member_illust.php?illust_id=12345',
         ])
 
@@ -123,7 +123,7 @@ def test_illust(_, client, download_image):
 
         assert download_image.call_args[0][0] == 'Illust!'
         assert download_image.call_args[1]['directory'] == Path.cwd()
-        assert download_image.call_args[1]['ignore_duplicate'] is True
+        assert download_image.call_args[1]['allow_duplicate'] is True
         assert download_image.call_args[1]['track_download'] is False
 
 

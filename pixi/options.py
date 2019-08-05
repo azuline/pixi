@@ -13,10 +13,10 @@ def download_directory(func):
     )
 
 
-def ignore_duplicates(func):
+def allow_duplicates(func):
     return functools.wraps(func)(
         click.option(
-            '--ignore-duplicates', '-i',
+            '--allow-duplicates', '-a',
             is_flag=True,
             default=False,
             help='Downloads illustrations even if previously downloaded.',
@@ -27,7 +27,7 @@ def ignore_duplicates(func):
 def track_download(func):
     return functools.wraps(func)(
         click.option(
-            '--track/--no-track', '-tr/-nt',
+            '--track/--no-track', '-t/-T',
             default=None,
             help='Record the downloaded image to avoid future duplicates.',
         )(func)

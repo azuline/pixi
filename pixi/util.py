@@ -50,10 +50,10 @@ def download_image(
     illustration,
     directory,
     tries=1,
-    ignore_duplicate=False,
+    allow_duplicate=False,
     track_download=True,
 ):
-    if not ignore_duplicate:
+    if not allow_duplicate:
         try:
             check_duplicate(illustration.id)
         except DuplicateImage:
@@ -104,7 +104,7 @@ def download_pages(
     get_next_response,
     starting_offset,
     directory,
-    ignore_duplicates=False,
+    allow_duplicates=False,
     track_download=True,
     start_page=1,
 ):
@@ -121,7 +121,7 @@ def download_pages(
                     illustration,
                     directory=directory,
                     tries=3,
-                    ignore_duplicate=ignore_duplicates,
+                    allow_duplicate=allow_duplicates,
                     track_download=(
                         resolve_track_download(track_download, directory)
                     ),

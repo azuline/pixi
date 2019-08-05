@@ -116,11 +116,11 @@ $ pixi wipe --table=failed
 
 pixi also keeps track of which illustrations have been downloaded and will avoid
 downloading duplicate illustrations. However, if you wish to re-download
-illustrations, pass the `--ignore-duplicates` (or `-i`) flag.
+illustrations, pass the `--allow-duplicates` (or `-a`) flag.
 
 By default, illustration downloads will be tracked if they are downloaded to
 the default downloads directory and not tracked if they aren't. This behavior
-can be manually set with the `--track/--no-track` (or `-tr/-nt`) flag.
+can be manually set with the `--track/--no-track` (or `-t/-T`) flag.
 
 If you wish to wipe the database of tracked downloads, run the following
 command and confirm the action.

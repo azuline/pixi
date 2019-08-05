@@ -11,8 +11,8 @@ from pixi.config import CONFIG_PATH, Config
 from pixi.database import calculate_migrations_needed, database
 from pixi.errors import DownloadFailed, PixiError
 from pixi.options import (
+    allow_duplicates,
     download_directory,
-    ignore_duplicates,
     page,
     track_download,
     visibility,
@@ -87,9 +87,9 @@ def migrate():
     ),
 )
 @download_directory
-@ignore_duplicates
+@allow_duplicates
 @track_download
-def illust(illustration, directory, ignore_duplicates, track):
+def illust(illustration, directory, allow_duplicates, track):
     """Download an illustration by URL or ID."""
     try:
         download_image(
@@ -97,7 +97,7 @@ def illust(illustration, directory, ignore_duplicates, track):
             directory=(
                 Path(directory or Config()['pixi']['download_directory'])
             ),
-            ignore_duplicate=ignore_duplicates,
+            allow_duplicate=allow_duplicates,
             track_download=resolve_track_download(track, directory),
         )
     except (BadApiResponse, RequestException) as e:
@@ -114,9 +114,9 @@ def illust(illustration, directory, ignore_duplicates, track):
 )
 @page
 @download_directory
-@ignore_duplicates
+@allow_duplicates
 @track_download
-def artist(artist, page, directory, ignore_duplicates, track):
+def artist(artist, page, directory, allow_duplicates, track):
     """Download illustrations of an artist by URL or ID."""
     client = Client()
 
@@ -129,7 +129,7 @@ def artist(artist, page, directory, ignore_duplicates, track):
         directory=(
             Path(directory or Config()['pixi']['download_directory'])
         ),
-        ignore_duplicates=ignore_duplicates,
+        allow_duplicates=allow_duplicates,
         track_download=track,
     )
 
@@ -145,16 +145,16 @@ def artist(artist, page, directory, ignore_duplicates, track):
     ),
 )
 @click.option(
-    '--tag', '-t',
+    '--tag', '-g',
     help='The bookmark tag to filter bookmarks by.',
 )
 @visibility
 @page
 @download_directory
-@ignore_duplicates
+@allow_duplicates
 @track_download
 def bookmarks(
-    user, tag, visibility, page, directory, ignore_duplicates, track
+    user, tag, visibility, page, directory, allow_duplicates, track
 ):
     """Download illustrations bookmarked by a user."""
     client = Client()
@@ -181,7 +181,7 @@ def bookmarks(
             directory=(
                 Path(directory or Config()['pixi']['download_directory'])
             ),
-            ignore_duplicates=ignore_duplicates,
+            allow_duplicates=allow_duplicates,
             track_download=track,
         )
 
