@@ -1,17 +1,24 @@
 from pathlib import Path
+from shutil import copyfile
 
 import mock
 import pytest
 from click.testing import CliRunner
 from pixivapi import BadApiResponse, Size
 
+from pixi.database import database
+from pixi.errors import DownloadFailed, DuplicateImage, InvalidURL
 from pixi.util import (
+    check_duplicate,
+    clear_failed,
     download_image,
     format_filename,
+    mark_failed,
     parse_id,
+    record_download,
     rename_duplicate_file,
+    resolve_track_download,
 )
-from pixi.errors import DownloadFailed, InvalidURL
 
 
 @pytest.mark.parametrize(
@@ -65,6 +72,17 @@ def test_format_filename():
     assert 'id. title' == format_filename('id', 'title')
 
 
+@pytest.mark.parametrize(
+    'track_download, directory, result', [
+        (True, True, True),
+        (None, True, False),
+        (None, False, True),
+    ]
+)
+def test_resolve_track_download(track_download, directory, result):
+    assert result == resolve_track_download(track_download, directory)
+
+
 @mock.patch('pixi.util.format_filename')
 @mock.patch('pixi.util.Config')
 @mock.patch('pixi.util.check_duplicate')
@@ -99,3 +117,135 @@ def test_download_illust_error(_, __, ___, format_filename):
         with pytest.raises(DownloadFailed):
             download_image(illustration, directory=str(Path.cwd()), tries=2)
         assert illustration.download.call_count == 2
+
+
+@mock.patch('pixi.util.format_filename')
+@mock.patch('pixi.util.check_duplicate')
+@mock.patch('pixi.util.Config')
+@mock.patch('pixi.util.mark_failed')
+def test_download_duplicate(_, __, check_duplicate, format_filename):
+    illustration = mock.Mock()
+    check_duplicate.side_effect = DuplicateImage
+
+    with CliRunner().isolated_filesystem():
+        download_image(illustration, directory=str(Path.cwd()))
+        illustration.download.assert_not_called()
+
+
+def test_mark_failed(monkeypatch):
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        db_path = Path.cwd() / 'db.sqlite3'
+        copyfile(Path(__file__).parent / 'test.db', db_path)
+        monkeypatch.setattr('pixi.database.DATABASE_PATH', db_path)
+
+        illustration = mock.Mock(
+            id=99,
+            user=mock.Mock(account='dazuling'),
+            title='cat whiskers',
+        )
+        mark_failed(illustration)
+
+        with database() as (conn, cursor):
+            cursor.execute(
+                """
+                SELECT id FROM failed WHERE id = ? AND artist = ? AND title = ?
+                """,
+                (
+                    99,
+                    'dazuling',
+                    'cat whiskers',
+                )
+            )
+            assert cursor.fetchone()['id'] == 99
+
+
+def test_clear_failed(monkeypatch):
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        db_path = Path.cwd() / 'db.sqlite3'
+        copyfile(Path(__file__).parent / 'test.db', db_path)
+        monkeypatch.setattr('pixi.database.DATABASE_PATH', db_path)
+
+        with database() as (conn, cursor):
+            cursor.execute(
+                """
+                INSERT INTO failed (id, artist, title) VALUES (?, ?, ?)
+                """,
+                (
+                    99,
+                    'dazuling',
+                    'cat whiskers',
+                )
+            )
+
+        clear_failed(99)
+
+        with database() as (conn, cursor):
+            cursor.execute('SELECT 1 FROM failed WHERE id = ?', (99, ))
+            assert not cursor.fetchone()
+
+
+def test_record_download(monkeypatch):
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        db_path = Path.cwd() / 'db.sqlite3'
+        copyfile(Path(__file__).parent / 'test.db', db_path)
+        monkeypatch.setattr('pixi.database.DATABASE_PATH', db_path)
+
+        record_download(99, '/haha/a/path')
+
+        with database() as (conn, cursor):
+            cursor.execute(
+                """
+                SELECT id FROM downloaded WHERE id = ? AND path = ?
+                """,
+                (
+                    99,
+                    '/haha/a/path',
+                )
+            )
+            assert cursor.fetchone()['id'] == 99
+
+
+def test_check_duplicate_positive(monkeypatch):
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        db_path = Path.cwd() / 'db.sqlite3'
+        copyfile(Path(__file__).parent / 'test.db', db_path)
+        monkeypatch.setattr('pixi.database.DATABASE_PATH', db_path)
+
+        with database() as (conn, cursor):
+            cursor.execute(
+                """
+                INSERT INTO downloaded (id, path) VALUES (?, ?)
+                """,
+                (
+                    99,
+                    '/haha/a/path',
+                )
+            )
+
+        with pytest.raises(DuplicateImage):
+            check_duplicate(99)
+
+
+def test_check_duplicate_negative(monkeypatch):
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        db_path = Path.cwd() / 'db.sqlite3'
+        copyfile(Path(__file__).parent / 'test.db', db_path)
+        monkeypatch.setattr('pixi.database.DATABASE_PATH', db_path)
+
+        with database() as (conn, cursor):
+            cursor.execute(
+                """
+                INSERT INTO downloaded (id, path) VALUES (?, ?)
+                """,
+                (
+                    99,
+                    '/haha/a/path',
+                )
+            )
+
+        check_duplicate(98)

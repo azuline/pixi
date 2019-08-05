@@ -1,47 +1,27 @@
-import functools
 import sys
 
 import click
-from pixivapi import BadApiResponse, LoginError
+from pixivapi import BadApiResponse, LoginError, Visibility
 from requests import RequestException
 
 from pixi import commandgroup
 from pixi.client import Client
-from pixi.util import download_image, parse_id, resolve_track_download
 from pixi.config import CONFIG_PATH, Config
 from pixi.database import calculate_migrations_needed, database
 from pixi.errors import DownloadFailed, PixiError
-
-
-def download_directory(func):
-    return functools.wraps(func)(
-        click.option(
-            '--directory', '-d',
-            type=click.Path(exists=True, file_okay=False),
-            help='Config override for download directory.'
-        )(func)
-    )
-
-
-def ignore_duplicates(func):
-    return functools.wraps(func)(
-        click.option(
-            '--ignore-duplicates', '-i',
-            is_flag=True,
-            default=False,
-            help='Downloads illustrations even if previously downloaded.',
-        )(func)
-    )
-
-
-def track_download(func):
-    return functools.wraps(func)(
-        click.option(
-            '--track/--no-track', '-tr/-nt',
-            default=None,
-            help='Record the downloaded image to avoid future duplicates.'
-        )(func)
-    )
+from pixi.options import (
+    download_directory,
+    ignore_duplicates,
+    page,
+    track_download,
+    visibility,
+)
+from pixi.util import (
+    download_image,
+    download_pages,
+    parse_id,
+    resolve_track_download,
+)
 
 
 @commandgroup.command()
@@ -106,7 +86,6 @@ def migrate():
     ),
 )
 @download_directory
-@track_download
 @ignore_duplicates
 @track_download
 def illust(illustration, directory, ignore_duplicates, track):
@@ -130,13 +109,7 @@ def illust(illustration, directory, ignore_duplicates, track):
         parse_id(value, path='/member.php', param='id')
     ),
 )
-@click.option(
-    '--page', '-p',
-    nargs=1,
-    type=click.INT,
-    default=1,
-    help='Page of artist\'s works to start downloading on.',
-)
+@page
 @download_directory
 @ignore_duplicates
 @track_download
@@ -144,35 +117,16 @@ def artist(artist, page, directory, ignore_duplicates, track):
     """Download illustrations of an artist by URL or ID."""
     client = Client()
 
-    response = client.fetch_user_illustrations(artist, offset=(page - 1) * 30)
-    if not response['illustrations']:
-        raise PixiError('No illustrations found.')
+    def get_next_response(offset):
+        return client.fetch_user_illustrations(artist, offset=offset)
 
-    while response['next']:
-        click.echo(
-            f'Downloading page {response["next"] // 30} of illustrations.\n'
-        )
-        for illustration in response['illustrations']:
-            try:
-                download_image(
-                    illustration,
-                    directory=directory,
-                    tries=3,
-                    ignore_duplicates=ignore_duplicates,
-                    track_download=(
-                        resolve_track_download(track_download, directory)
-                    ),
-                )
-            except DownloadFailed:
-                click.echo(
-                    f'Failed to download image {illustration.id}. '
-                    f'{illustration.title} three times. Skipping...'
-                )
-
-        if response['next']:
-            response = client.fetch_user_illustrations(
-                artist, offset=response['next']
-            )
+    download_pages(
+        get_next_response,
+        starting_offset=(page - 1) * 30,
+        directory=directory,
+        ignore_duplicates=ignore_duplicates,
+        track_download=track,
+    )
 
     click.echo(f'Finished downloading artist {artist}.')
 
@@ -186,24 +140,45 @@ def artist(artist, page, directory, ignore_duplicates, track):
     ),
 )
 @click.option(
-    '--visibility', '-v',
-    type=click.Choice(['public', 'private']),
-    help=(
-        'The visibility of the bookmarks that should be downloaded. '
-        'Leave blank to download all.'
-    ),
-)
-@click.option(
     '--tag', '-t',
     help='The bookmark tag to filter bookmarks by.',
 )
+@visibility
+@page
 @download_directory
 @ignore_duplicates
 @track_download
-def bookmark(user, visibility, tag, directory, ignore_duplicates, track):
+def bookmarks(
+    user, tag, visibility, page, directory, ignore_duplicates, track
+):
     """Download illustrations bookmarked by a user."""
-    # TODO
-    pass
+    client = Client()
+
+    if visibility:
+        visibilities = [Visibility(visibility)]
+    else:
+        visibilities = [Visibility.PUBLIC, Visibility.PRIVATE]
+
+    for visi in visibilities:
+        click.echo(f'Downloading {visi.value} bookmarks.\n')
+
+        def get_next_response(offset):
+            return client.fetch_user_bookmarks(
+                user_id=user or client.account.id,
+                max_bookmark_id=offset,
+                visibility=visi,
+                tag=tag,
+            )
+
+        download_pages(
+            get_next_response,
+            starting_offset=(page - 1) * 30,
+            directory=directory,
+            ignore_duplicates=ignore_duplicates,
+            track_download=track,
+        )
+
+    click.echo(f'Finished downloading artist {artist}.')
 
 
 @commandgroup.command()

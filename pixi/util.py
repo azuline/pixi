@@ -8,7 +8,7 @@ from requests import RequestException
 
 from pixi.config import Config
 from pixi.database import database
-from pixi.errors import DownloadFailed, DuplicateImage, InvalidURL
+from pixi.errors import DownloadFailed, DuplicateImage, InvalidURL, PixiError
 
 
 def parse_id(string, path=None, param=None):
@@ -56,7 +56,13 @@ def download_image(
     track_download=True,
 ):
     if not ignore_duplicate:
-        check_duplicate(illustration.id)
+        try:
+            check_duplicate(illustration.id)
+        except DuplicateImage:
+            return click.echo(
+                f'{illustration.id}. {illustration.title} has been downloaded '
+                'previously, skipping...'
+            )
 
     for attempt in range(tries):
         try:
@@ -84,7 +90,7 @@ def download_image(
             click.echo()
             clear_failed(illustration.id)
             if track_download:
-                record_download(illustration.id, directory)
+                record_download(illustration.id, str(directory))
 
             break
         except (BadApiResponse, RequestException) as e:
@@ -96,6 +102,42 @@ def download_image(
     else:
         mark_failed(illustration)
         raise DownloadFailed
+
+
+def download_pages(
+    get_next_response,
+    starting_offset,
+    directory,
+    ignore_duplicates,
+    track_download,
+):
+    response = get_next_response(starting_offset)
+    if not response['illustrations']:
+        raise PixiError('No illustrations found.')
+
+    while response['next']:
+        click.echo(
+            f'Downloading page {response["next"] // 30} of illustrations.\n'
+        )
+        for illustration in response['illustrations']:
+            try:
+                download_image(
+                    illustration,
+                    directory=directory,
+                    tries=3,
+                    ignore_duplicate=ignore_duplicates,
+                    track_download=(
+                        resolve_track_download(track_download, directory)
+                    ),
+                )
+            except DownloadFailed:
+                click.echo(
+                    f'Failed to download image {illustration.id}. '
+                    f'{illustration.title} three times. Skipping...'
+                )
+
+        if response['next']:
+            response = get_next_response(response['next'])
 
 
 def mark_failed(illustration):

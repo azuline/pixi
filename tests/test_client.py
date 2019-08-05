@@ -63,3 +63,19 @@ def test_client_download(rename_duplicate_file, ceil):
 
         with destination.open('r') as f:
             assert 'ab' == f.read()
+
+
+@mock.patch('pixi.client.rename_duplicate_file')
+def test_client_download_file_deletion(rename_duplicate_file):
+    with CliRunner().isolated_filesystem():
+        destination = mock.Mock()
+        destination.open.side_effect = Exception
+        rename_duplicate_file.return_value = destination
+
+        _PixivClient.authenticate = None
+        client = _PixivClient(authenticate=False)
+        client.session.get = lambda *a, **k: None
+        with pytest.raises(Exception):
+            client.download('haha not a url', destination)
+
+        destination.unlink.assert_called()

@@ -14,13 +14,14 @@ Options:
   --help  Show this message and exit.
 
 Commands:
-  artist    Download illustrations of an artist by URL or ID.
-  auth      Log into Pixiv and generate a refresh token.
-  bookmark  Download illustrations bookmarked by a user.
-  config    Edit the config file.
-  failed    View illustrations that failed to download.
-  illust    Download an illustration by URL or ID.
-  wipe      Wipe the saved history of downloaded illustrations.
+  artist     Download illustrations of an artist by URL or ID.
+  auth       Log into Pixiv and generate a refresh token.
+  bookmarks  Download illustrations bookmarked by a user.
+  config     Edit the config file.
+  failed     View illustrations that failed to download.
+  illust     Download an illustration by URL or ID.
+  migrate    Upgrade the database to the latest migration.
+  wipe       Wipe the saved history of downloaded illustrations.
 ```
 
 ## Usage
@@ -35,10 +36,12 @@ $ pipx install pixi
 
 Make sure the location that pixi installs to is a part of `$PATH`.
 
-After installation, configure pixi with the following command.
+After installation, create the database and configure pixi with the following
+commands.
 
 ```sh
-$ pixi config
+$ pixi migrate  # Migrate the database
+$ pixi config  # Configure pixi
 ```
 
 Refer to the [configuration section](#Configuration) for details on the various
@@ -57,8 +60,6 @@ $ pixi illustration https://www.pixiv.net/member_illust.php?mode=medium&illust_i
 ```sh
 $ pixi illustration 64930973
 ```
-
-TODO Implementation of the following commands:
 
 Downloading all the illustrations of an artist can be done with the following
 command.
@@ -93,6 +94,8 @@ following command.
 ```sh
 $ pixi --help illustration
 ```
+
+TODO THE FOLLOWING
 
 When downloading many images from an artist or a user's bookmarks, an image
 can occasionally fail to download. If an image fails to download after several
