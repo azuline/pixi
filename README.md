@@ -30,11 +30,7 @@ This tool can be installed from PyPI as `pixi`.
 
 ```sh
 $ pip install --user pixi
-or
-$ pipx install pixi
 ```
-
-Make sure the location that pixi installs to is a part of `$PATH`.
 
 After installation, create the database and configure pixi with the following
 commands.
@@ -95,8 +91,6 @@ following command.
 $ pixi --help illustration
 ```
 
-TODO THE FOLLOWING
-
 When downloading many images from an artist or a user's bookmarks, an image
 can occasionally fail to download. If an image fails to download after several
 retries, it will be recorded and skipped. Failed images can be viewed with the
@@ -129,8 +123,6 @@ command and confirm the action.
 $ pixi wipe --table=downloads
 ```
 
-END TODO
-
 ## Configuration
 
 The configuration file is in `ini` format. A demo configuration is included
@@ -143,6 +135,3 @@ refresh_token =
 ; The default directory for iillustrations to be downloaded to.
 download_directory = /home/azuline/images/pixiv
 ```
-
-TODO filename format configuration option, support subdirectories
-for `{artist}/{image}`-like formatting.
