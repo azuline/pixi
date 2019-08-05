@@ -70,7 +70,7 @@ def test_rename_duplicate_file_doesnt_exist():
 
 
 def test_format_filename():
-    assert 'id. title' == format_filename('id', 'title')
+    assert 'id. titl_e' == format_filename('id', 'titl/e')
 
 
 @pytest.mark.parametrize(
