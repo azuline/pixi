@@ -190,7 +190,7 @@ def bookmarks(
             start_page=page,
         )
 
-    click.echo(f'Finished downloading artist {artist}.')
+    click.echo(f'Finished downloading bookmarks.')
 
 
 def _get_starting_bookmark_offset(get_next_response, page):
