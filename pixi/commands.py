@@ -1,4 +1,5 @@
 import sys
+from pathlib import Path
 
 import click
 from pixivapi import BadApiResponse, LoginError, Visibility
@@ -93,9 +94,11 @@ def illust(illustration, directory, ignore_duplicates, track):
     try:
         download_image(
             Client().fetch_illustration(illustration),
-            directory=directory,
+            directory=(
+                Path(directory or Config()['pixi']['download_directory'])
+            ),
             ignore_duplicate=ignore_duplicates,
-            track_download=resolve_track_download(track_download, directory),
+            track_download=resolve_track_download(track, directory),
         )
     except (BadApiResponse, RequestException) as e:
         raise DownloadFailed from e
@@ -123,7 +126,9 @@ def artist(artist, page, directory, ignore_duplicates, track):
     download_pages(
         get_next_response,
         starting_offset=(page - 1) * 30,
-        directory=directory,
+        directory=(
+            Path(directory or Config()['pixi']['download_directory'])
+        ),
         ignore_duplicates=ignore_duplicates,
         track_download=track,
     )
@@ -173,7 +178,9 @@ def bookmarks(
         download_pages(
             get_next_response,
             starting_offset=(page - 1) * 30,
-            directory=directory,
+            directory=(
+                Path(directory or Config()['pixi']['download_directory'])
+            ),
             ignore_duplicates=ignore_duplicates,
             track_download=track,
         )

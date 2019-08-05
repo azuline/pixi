@@ -1,12 +1,10 @@
 import os
-from pathlib import Path
 from urllib import parse
 
 import click
 from pixivapi import BadApiResponse, Size
 from requests import RequestException
 
-from pixi.config import Config
 from pixi.database import database
 from pixi.errors import DownloadFailed, DuplicateImage, InvalidURL, PixiError
 
@@ -50,7 +48,7 @@ def resolve_track_download(track_download, directory):
 
 def download_image(
     illustration,
-    directory=None,
+    directory,
     tries=1,
     ignore_duplicate=False,
     track_download=True,
@@ -66,8 +64,6 @@ def download_image(
 
     for attempt in range(tries):
         try:
-            config_directory = Config()['pixi']['download_directory']
-            directory = Path(directory or config_directory)
             filename = format_filename(illustration.id, illustration.title)
 
             if illustration.meta_pages:
@@ -108,17 +104,17 @@ def download_pages(
     get_next_response,
     starting_offset,
     directory,
-    ignore_duplicates,
-    track_download,
+    ignore_duplicates=False,
+    track_download=True,
+    start_page=1,
 ):
     response = get_next_response(starting_offset)
     if not response['illustrations']:
         raise PixiError('No illustrations found.')
 
-    while response['next']:
-        click.echo(
-            f'Downloading page {response["next"] // 30} of illustrations.\n'
-        )
+    page = start_page
+    while True:
+        click.echo(f'Downloading page {page} of illustrations.\n')
         for illustration in response['illustrations']:
             try:
                 download_image(
@@ -136,8 +132,11 @@ def download_pages(
                     f'{illustration.title} three times. Skipping...'
                 )
 
-        if response['next']:
-            response = get_next_response(response['next'])
+        if not response['next']:
+            break
+
+        response = get_next_response(response['next'])
+        page += 1
 
 
 def mark_failed(illustration):

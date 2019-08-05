@@ -2,11 +2,11 @@ from pathlib import Path
 
 import mock
 from click.testing import CliRunner
-from pixivapi import LoginError
+from pixivapi import BadApiResponse, LoginError, Visibility
 
-from pixi.commands import auth, config, migrate
+from pixi.commands import artist, auth, bookmarks, config, illust, migrate
 from pixi.database import Migration, database
-from pixi.errors import PixiError
+from pixi.errors import DownloadFailed, PixiError
 
 
 @mock.patch('pixi.commands.Config')
@@ -102,3 +102,76 @@ def test_migrate_not_needed(calculate, monkeypatch):
         calculate.return_value = []
         result = runner.invoke(migrate)
         assert isinstance(result.exception, SystemExit)
+
+
+@mock.patch('pixi.commands.download_image')
+@mock.patch('pixi.commands.Client')
+@mock.patch('pixi.commands.Config')
+def test_illust(_, client, download_image):
+    client.return_value.fetch_illustration.return_value = 'Illust!'
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        runner.invoke(illust, [
+            '--directory',
+            str(Path.cwd()),
+            '--no-track',
+            '--ignore-duplicates',
+            'https://www.pixiv.net/member_illust.php?illust_id=12345',
+        ])
+
+        client.return_value.fetch_illustration.assert_called_with(12345)
+
+        assert download_image.call_args[0][0] == 'Illust!'
+        assert download_image.call_args[1]['directory'] == Path.cwd()
+        assert download_image.call_args[1]['ignore_duplicate'] is True
+        assert download_image.call_args[1]['track_download'] is False
+
+
+@mock.patch('pixi.commands.download_image')
+@mock.patch('pixi.commands.Client')
+@mock.patch('pixi.commands.Config')
+def test_illust_error(_, __, download_image):
+    download_image.side_effect = BadApiResponse
+    result = CliRunner().invoke(illust, '12345')
+    assert isinstance(result.exception, DownloadFailed)
+
+
+@mock.patch('pixi.commands.download_pages')
+@mock.patch('pixi.commands.Client')
+@mock.patch('pixi.commands.Config')
+def test_artist(_, client, download_pages):
+    CliRunner().invoke(artist, [
+        '--page',
+        '372',
+        'https://www.pixiv.net/member.php?id=12345',
+    ])
+    assert download_pages.call_args[1]['starting_offset'] == 371 * 30
+
+    download_pages.call_args[0][0](222)
+    fetch_user_illustrations = client.return_value.fetch_user_illustrations
+    fetch_user_illustrations.assert_called_with(12345, offset=222)
+
+
+@mock.patch('pixi.commands.download_pages')
+@mock.patch('pixi.commands.Client')
+@mock.patch('pixi.commands.Config')
+def test_bookmarks(_, client, download_pages):
+    CliRunner().invoke(bookmarks)
+    assert download_pages.call_count == 2
+
+
+@mock.patch('pixi.commands.download_pages')
+@mock.patch('pixi.commands.Client')
+@mock.patch('pixi.commands.Config')
+def test_bookmarks_with_visibility(_, client, download_pages):
+    CliRunner().invoke(bookmarks, ['--visibility', 'public'])
+    assert download_pages.call_count == 1
+
+    client.return_value.account.id = 789
+    download_pages.call_args[0][0](10)
+    assert client.return_value.fetch_user_bookmarks.called_with(
+        user=789,
+        max_bookmark_id=10,
+        visibility=Visibility.PUBLIC,
+        tag=None,
+    )

@@ -7,11 +7,12 @@ from click.testing import CliRunner
 from pixivapi import BadApiResponse, Size
 
 from pixi.database import database
-from pixi.errors import DownloadFailed, DuplicateImage, InvalidURL
+from pixi.errors import DownloadFailed, DuplicateImage, InvalidURL, PixiError
 from pixi.util import (
     check_duplicate,
     clear_failed,
     download_image,
+    download_pages,
     format_filename,
     mark_failed,
     parse_id,
@@ -84,18 +85,17 @@ def test_resolve_track_download(track_download, directory, result):
 
 
 @mock.patch('pixi.util.format_filename')
-@mock.patch('pixi.util.Config')
 @mock.patch('pixi.util.check_duplicate')
 @mock.patch('pixi.util.clear_failed')
 @mock.patch('pixi.util.record_download')
-def test_download_illust(_, __, ___, ____, format_filename):
+def test_download_illust(_, __, ___, format_filename):
     format_filename.return_value = '1. image'
     illustration = mock.Mock()
     illustration.client = mock
     illustration.meta_pages = False
 
     with CliRunner().isolated_filesystem():
-        download_image(illustration, directory=str(Path.cwd()))
+        download_image(illustration, directory=Path.cwd())
 
         assert illustration.download.called_with(
             directory=Path.cwd(),
@@ -105,31 +105,55 @@ def test_download_illust(_, __, ___, ____, format_filename):
 
 
 @mock.patch('pixi.util.format_filename')
-@mock.patch('pixi.util.Config')
 @mock.patch('pixi.util.check_duplicate')
 @mock.patch('pixi.util.mark_failed')
-def test_download_illust_error(_, __, ___, format_filename):
+def test_download_illust_error(_, __, format_filename):
     format_filename.return_value = '1. image'
     illustration = mock.Mock()
     illustration.download.side_effect = BadApiResponse
 
     with CliRunner().isolated_filesystem():
         with pytest.raises(DownloadFailed):
-            download_image(illustration, directory=str(Path.cwd()), tries=2)
+            download_image(illustration, directory=Path.cwd(), tries=2)
         assert illustration.download.call_count == 2
 
 
 @mock.patch('pixi.util.format_filename')
 @mock.patch('pixi.util.check_duplicate')
-@mock.patch('pixi.util.Config')
 @mock.patch('pixi.util.mark_failed')
-def test_download_duplicate(_, __, check_duplicate, format_filename):
+def test_download_duplicate(_, check_duplicate, format_filename):
     illustration = mock.Mock()
     check_duplicate.side_effect = DuplicateImage
 
     with CliRunner().isolated_filesystem():
-        download_image(illustration, directory=str(Path.cwd()))
+        download_image(illustration, directory=Path.cwd())
         illustration.download.assert_not_called()
+
+
+def test_download_pages_no_illustrations():
+    get_next_response = mock.Mock()
+    get_next_response.return_value = {'illustrations': []}
+    with pytest.raises(PixiError):
+        download_pages(get_next_response, 1, None)
+
+
+@mock.patch('pixi.util.download_image')
+def test_download_pages(download_image):
+    download_image.side_effect = [DownloadFailed] * 5 + [None] * 5
+    get_next_response = mock.Mock()
+    get_next_response.side_effect = [
+        {
+            'illustrations': [mock.Mock(id=1, title='hi')] * 5,
+            'next': 5,
+        },
+        {
+            'illustrations': [6, 7, 8, 9, 10],
+            'next': None,
+        },
+    ]
+
+    download_pages(get_next_response, 0, None)
+    assert download_image.call_count == 10
 
 
 def test_mark_failed(monkeypatch):
