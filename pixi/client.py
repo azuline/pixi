@@ -4,7 +4,7 @@ from pixivapi import Client as BaseClient
 from pixivapi import LoginError
 from tqdm import tqdm
 
-from pixi.common import rename_duplicate_file
+from pixi.util import rename_duplicate_file
 from pixi.config import Config
 from pixi.errors import GoAuthenticate
 

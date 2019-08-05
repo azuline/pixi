@@ -5,7 +5,7 @@ import pytest
 from click.testing import CliRunner
 from pixivapi import BadApiResponse, Size
 
-from pixi.common import (
+from pixi.util import (
     download_image,
     format_filename,
     parse_id,
@@ -65,11 +65,11 @@ def test_format_filename():
     assert 'id. title' == format_filename('id', 'title')
 
 
-@mock.patch('pixi.common.format_filename')
-@mock.patch('pixi.common.Config')
-@mock.patch('pixi.common.check_duplicate')
-@mock.patch('pixi.common.clear_failed')
-@mock.patch('pixi.common.record_download')
+@mock.patch('pixi.util.format_filename')
+@mock.patch('pixi.util.Config')
+@mock.patch('pixi.util.check_duplicate')
+@mock.patch('pixi.util.clear_failed')
+@mock.patch('pixi.util.record_download')
 def test_download_illust(_, __, ___, ____, format_filename):
     format_filename.return_value = '1. image'
     illustration = mock.Mock()
@@ -86,10 +86,10 @@ def test_download_illust(_, __, ___, ____, format_filename):
         )
 
 
-@mock.patch('pixi.common.format_filename')
-@mock.patch('pixi.common.Config')
-@mock.patch('pixi.common.check_duplicate')
-@mock.patch('pixi.common.mark_failed')
+@mock.patch('pixi.util.format_filename')
+@mock.patch('pixi.util.Config')
+@mock.patch('pixi.util.check_duplicate')
+@mock.patch('pixi.util.mark_failed')
 def test_download_illust_error(_, __, ___, format_filename):
     format_filename.return_value = '1. image'
     illustration = mock.Mock()

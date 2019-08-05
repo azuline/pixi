@@ -7,7 +7,7 @@ from requests import RequestException
 
 from pixi import commandgroup
 from pixi.client import Client
-from pixi.common import download_image, parse_id, resolve_track_download
+from pixi.util import download_image, parse_id, resolve_track_download
 from pixi.config import CONFIG_PATH, Config
 from pixi.database import calculate_migrations_needed, database
 from pixi.errors import DownloadFailed, PixiError
