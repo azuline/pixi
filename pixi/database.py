@@ -1,4 +1,3 @@
-import logging
 import sqlite3
 import sys
 from collections import namedtuple
@@ -9,7 +8,6 @@ import click
 
 from pixi import DATA_DIR
 
-logger = logging.getLogger(__name__)
 Migration = namedtuple('Migration', 'path, version')
 
 DATABASE_PATH = DATA_DIR / 'db.sqlite3'
@@ -66,14 +64,12 @@ def calculate_migrations_needed():
 
 def _find_migrations():
     migrations = []
-    for sql_path in [
-        f for f in MIGRATIONS_DIR.listdir() if f.endswith('.sql')
-    ]:
+    for sql_path in MIGRATIONS_DIR.glob('*.sql'):
         try:
             migrations.append(
                 Migration(path=sql_path, version=int(sql_path.stem))
             )
-        except TypeError:
+        except ValueError:
             click.echo(f'Invalid migration name: {sql_path}.')
             raise click.Abort
     return migrations
