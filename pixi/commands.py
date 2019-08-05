@@ -131,7 +131,8 @@ def artist(artist, page, directory, allow_duplicates, track):
             Path(directory or Config()['pixi']['download_directory'])
         ),
         allow_duplicates=allow_duplicates,
-        track_download=track,
+        track_download=resolve_track_download(track, directory),
+        start_page=page,
     )
 
     click.echo(f'Finished downloading artist {artist}.')
@@ -178,15 +179,25 @@ def bookmarks(
 
         download_pages(
             get_next_response,
-            starting_offset=(page - 1) * 30,
+            starting_offset=(
+                _get_starting_bookmark_offset(get_next_response, page)
+            ),
             directory=(
                 Path(directory or Config()['pixi']['download_directory'])
             ),
             allow_duplicates=allow_duplicates,
-            track_download=track,
+            track_download=resolve_track_download(track, directory),
+            start_page=page,
         )
 
     click.echo(f'Finished downloading artist {artist}.')
+
+
+def _get_starting_bookmark_offset(get_next_response, page):
+    max_bookmark_id = None
+    for _ in range(page - 1):
+        max_bookmark_id = get_next_response(max_bookmark_id)['next']
+    return max_bookmark_id
 
 
 @commandgroup.command()

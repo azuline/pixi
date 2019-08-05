@@ -151,6 +151,7 @@ def mark_failed(illustration):
                 illustration.title,
             )
         )
+        conn.commit()
 
 
 def clear_failed(illustration_id):
@@ -163,6 +164,7 @@ def clear_failed(illustration_id):
                 illustration_id,
             )
         )
+        conn.commit()
 
 
 def record_download(illustration_id, path):
@@ -176,6 +178,7 @@ def record_download(illustration_id, path):
                 path,
             )
         )
+        conn.commit()
 
 
 def check_duplicate(illustration_id):

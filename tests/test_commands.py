@@ -8,6 +8,7 @@ from pixivapi import BadApiResponse, LoginError, Visibility
 
 from pixi.commands import (
     _confirm_table_wipe,
+    _get_starting_bookmark_offset,
     artist,
     auth,
     bookmarks,
@@ -187,6 +188,18 @@ def test_bookmarks_with_visibility(_, client, download_pages):
         visibility=Visibility.PUBLIC,
         tag=None,
     )
+
+
+def test_get_starting_bookmark_offset():
+    get_next_response = mock.Mock()
+    get_next_response.return_value = {'next': 831831}
+    assert 831831 == _get_starting_bookmark_offset(get_next_response, 2)
+
+
+def test_get_starting_bookmark_offset_page_1():
+    get_next_response = mock.Mock()
+    get_next_response.return_value = {'next': 831831}
+    assert _get_starting_bookmark_offset(get_next_response, 1) is None
 
 
 def test_failed(monkeypatch):
