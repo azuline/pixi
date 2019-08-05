@@ -1,4 +1,5 @@
 import os
+import re
 from urllib import parse
 
 import click
@@ -37,7 +38,7 @@ def rename_duplicate_file(path):
 
 
 def format_filename(id_, title):
-    return f'{id_}. {title}'
+    return re.sub(r'[:\?<>\\*\|"\/]', '_', f'{id_}. {title}')
 
 
 def resolve_track_download(track_download, directory):
@@ -171,7 +172,7 @@ def record_download(illustration_id, path):
     with database() as (conn, cursor):
         cursor.execute(
             """
-            INSERT INTO downloaded (id, path) VALUES (?, ?)
+            INSERT OR IGNORE INTO downloaded (id, path) VALUES (?, ?)
             """,
             (
                 illustration_id,
