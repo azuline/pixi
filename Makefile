@@ -1,13 +1,13 @@
 cov:
-	poetry run pytest --cov-report term-missing --cov-branch --cov=pixi tests/
+	pytest --cov-report term-missing --cov-branch --cov=pixi tests/
 
 lint:
-	poetry run isort -rc .
-	poetry run flake8
+	isort -rc .
+	flake8
 
 tests:
-	poetry run pytest
-	poetry run isort -rc -c .
-	poetry run flake8
+	pytest
+	isort -rc -c .
+	flake8
 
-.PHONY: lint tests
+.PHONY: cov lint tests

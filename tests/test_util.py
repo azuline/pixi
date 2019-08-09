@@ -165,7 +165,7 @@ def test_mark_failed(monkeypatch):
 
         illustration = mock.Mock(
             id=99,
-            user=mock.Mock(account='dazuling'),
+            user=mock.Mock(account='azuline'),
             title='cat whiskers',
         )
         mark_failed(illustration)
@@ -177,7 +177,7 @@ def test_mark_failed(monkeypatch):
                 """,
                 (
                     99,
-                    'dazuling',
+                    'azuline',
                     'cat whiskers',
                 )
             )
@@ -198,7 +198,7 @@ def test_clear_failed(monkeypatch):
                 """,
                 (
                     99,
-                    'dazuling',
+                    'azuline',
                     'cat whiskers',
                 )
             )

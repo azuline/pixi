@@ -1,7 +1,7 @@
 # pixi
 
-[![Build Status](https://travis-ci.org/dazuling/pixi.svg?branch=master)](https://travis-ci.org/dazuling/pixi)
-[![Coverage Status](https://coveralls.io/repos/github/dazuling/pixi/badge.svg?branch=master)](https://coveralls.io/github/dazuling/pixi?branch=master)
+[![Build Status](https://travis-ci.org/azuline/pixi.svg?branch=master)](https://travis-ci.org/azuline/pixi)
+[![Coverage Status](https://coveralls.io/repos/github/azuline/pixi/badge.svg?branch=master)](https://coveralls.io/github/azuline/pixi?branch=master)
 [![Pypi](https://img.shields.io/pypi/v/pixi.svg)](https://pypi.python.org/pypi/pixi)
 [![Pyversions](https://img.shields.io/pypi/pyversions/pixi.svg)](https://pypi.python.org/pypi/pixi)
 
@@ -132,6 +132,6 @@ below. To run pixi, a default download directory must be configured.
 [pixi]
 ; Leave this blank; the script will auto-populate it.
 refresh_token =
-; The default directory for iillustrations to be downloaded to.
+; The default directory for illustrations to be downloaded to.
 download_directory = /home/azuline/images/pixiv
 ```
