@@ -179,7 +179,7 @@ description = "A library for the Pixiv API."
 name = "pixiv-api"
 optional = false
 python-versions = ">=3.6,<4.0"
-version = "0.1.1"
+version = "0.3.0"
 
 [package.dependencies]
 requests = ">=2.0.0,<3.0.0"
@@ -313,7 +313,7 @@ python-versions = ">=2.7"
 version = "0.5.2"
 
 [metadata]
-content-hash = "1c1d73ed46e6be4de88dc963e5cc72f5c771da8703f161ed6b9e62ce9f95641b"
+content-hash = "7da3e2138359a70791f1341ea69d753219c4ccdfb8dc5a81556b799e738ffed4"
 python-versions = "^3.7"
 
 [metadata.hashes]
@@ -336,7 +336,7 @@ mccabe = ["ab8a6258860da4b6677da4bd2fe5dc2c659cff31b3ee4f7f5d64e79735b80d42", "d
 mock = ["83657d894c90d5681d62155c82bda9c1187827525880eda8ff5df4ec813437c3", "d157e52d4e5b938c550f39eb2fd15610db062441a9c2747d3dbfa9298211d0f8"]
 more-itertools = ["409cd48d4db7052af495b09dec721011634af3753ae1ef92d2b32f73a745f832", "92b8c4b06dac4f0611c0729b2f2ede52b2e1bac1ab48f089c7ddc12e26bb60c4"]
 packaging = ["a7ac867b97fdc07ee80a8058fe4435ccd274ecc3b0ed61d852d7d53055528cf9", "c491ca87294da7cc01902edbe30a5bc6c4c28172b5138ab4e4aa1b9d7bfaeafe"]
-pixiv-api = ["0ad02491cb48d9cfc40dfc76fe23139ebb0b82ecc03f4ffd962b8faf1b39b01a", "a06f74bd9b7188db939b758dc51bfebb5dbdc7060b2f37f0c467189a12c1a3a7"]
+pixiv-api = ["2f38c6f80f97f79ce4cd016fadcb9997107c341504c36afa3291c0b2d9d8e53e", "9e8e5d2109ce6dbc8ffa93b952483bbb6f86301f3ad5c91cb51a97d1775f7e8f"]
 pluggy = ["0825a152ac059776623854c1543d65a4ad408eb3d33ee114dff91e57ec6ae6fc", "b9817417e95936bf75d85d3f8767f7df6cdde751fc40aed3bb3074cbcb77757c"]
 py = ["64f65755aee5b381cea27766a3a147c3f15b9b6b9ac88676de66ba2ae36793fa", "dc639b046a6e2cff5bbe40194ad65936d6ba360b52b3c3fe1d08a82dd50b5e53"]
 pycodestyle = ["95a2219d12372f05704562a14ec30bc76b05a5b297b21a5dfe3f6fac3491ae56", "e40a936c9a450ad81df37f549d676d127b1b66000a6c500caa2b085bc0ca976c"]
