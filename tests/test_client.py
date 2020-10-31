@@ -10,6 +10,14 @@ from pixi.client import Client, _PixivClient
 from pixi.errors import GoAuthenticate
 
 
+@dataclass
+class RequestResponse:
+    headers = {'Content-Length': 3072}
+
+    def iter_content(*args, **kwargs):
+        return iter([b'a', b'b'])
+
+
 @mock.patch('pixi.client.Config')
 @mock.patch('pixi.client._PixivClient.authenticate')
 def test_get_client_no_refresh_token(_, config):
@@ -44,13 +52,6 @@ def test_get_client_no_authentication(authenticate, config):
 @mock.patch('pixi.client.ceil')
 @mock.patch('pixi.client.rename_duplicate_file')
 def test_client_download(rename_duplicate_file, ceil):
-    @dataclass
-    class RequestResponse:
-        headers = {'Content-Length': 3072}
-
-        def iter_content(*args, **kwargs):
-            return iter([b'a', b'b'])
-
     with CliRunner().isolated_filesystem():
         destination = Path.cwd() / 'filename.jpg'
         rename_duplicate_file.return_value = destination
@@ -74,7 +75,7 @@ def test_client_download_file_deletion(rename_duplicate_file):
 
         _PixivClient.authenticate = None
         client = _PixivClient(authenticate=False)
-        client.session.get = lambda *a, **k: None
+        client.session.get = lambda *a, **k: RequestResponse()
         with pytest.raises(Exception):
             client.download('haha not a url', destination)
 

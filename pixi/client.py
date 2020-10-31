@@ -45,13 +45,18 @@ class _PixivClient(BaseClient):
         response = self.session.get(
             url, headers={'Referer': referer}, stream=True
         )
-
         destination = rename_duplicate_file(destination)
+
+        try:
+            total = ceil(int(response.headers['Content-Length']) / 16384)
+        except (KeyError, ValueError):
+            total = None
+
         try:
             with destination.open('wb') as f:
                 for chunk in tqdm(
-                    iterable=response.iter_content(chunk_size=1024),
-                    total=ceil(int(response.headers['Content-Length']) / 1024),
+                    iterable=response.iter_content(chunk_size=16384),
+                    total=total,
                     unit='KB',
                     unit_scale=True,
                 ):
