@@ -1,7 +1,7 @@
 # pixi
 
 [![CI](https://img.shields.io/github/workflow/status/azuline/pixi/CI)](https://github.com/azuline/pixi/actions)
-[![codecov](https://img.shields.io/codecov/c/github/azuline/pixi?token=98M8XQLWLH)](https://codecov.io/gh/azuline/pixi)
+[![codecov](https://img.shields.io/codecov/c/github/azuline/pixi?token=ODGZ6RVUHT)](https://codecov.io/gh/azuline/pixi)
 [![Pypi](https://img.shields.io/pypi/v/pixi.svg)](https://pypi.python.org/pypi/pixi)
 [![Pyversions](https://img.shields.io/pypi/pyversions/pixi.svg)](https://pypi.python.org/pypi/pixi)
 
