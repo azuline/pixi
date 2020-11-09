@@ -8,10 +8,10 @@ import click
 
 from pixi import DATA_DIR
 
-Migration = namedtuple('Migration', 'path, version')
+Migration = namedtuple("Migration", "path, version")
 
-DATABASE_PATH = DATA_DIR / 'db.sqlite3'
-MIGRATIONS_DIR = Path(__file__).parent / 'migrations'
+DATABASE_PATH = DATA_DIR / "db.sqlite3"
+MIGRATIONS_DIR = Path(__file__).parent / "migrations"
 
 
 @contextmanager
@@ -45,9 +45,9 @@ def create_database_if_nonexistent():
 
 def confirm_database_is_updated():
     if calculate_migrations_needed():
-        if not len(sys.argv) == 2 or sys.argv[1] != 'migrate':
-            click.echo('The database needs to be migrated.')
-            click.echo('Run `pixi migrate`.')
+        if not len(sys.argv) == 2 or sys.argv[1] != "migrate":
+            click.echo("The database needs to be migrated.")
+            click.echo("Run `pixi migrate`.")
             sys.exit(1)
 
 
@@ -64,18 +64,16 @@ def calculate_migrations_needed():
 
 def _find_migrations():
     migrations = []
-    for sql_path in MIGRATIONS_DIR.glob('*.sql'):
+    for sql_path in MIGRATIONS_DIR.glob("*.sql"):
         try:
-            migrations.append(
-                Migration(path=sql_path, version=int(sql_path.stem))
-            )
+            migrations.append(Migration(path=sql_path, version=int(sql_path.stem)))
         except ValueError:
-            click.echo(f'Invalid migration name: {sql_path}.')
+            click.echo(f"Invalid migration name: {sql_path}.")
             raise click.Abort
     return migrations
 
 
 def _get_version():
     with database() as (conn, cursor):
-        cursor.execute('SELECT MAX(version) FROM versions')
+        cursor.execute("SELECT MAX(version) FROM versions")
         return cursor.fetchone()[0] or 0

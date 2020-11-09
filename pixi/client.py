@@ -33,31 +33,29 @@ class _PixivClient(BaseClient):
 
         if authenticate:
             config = Config()
-            if not config['pixi']['refresh_token']:
+            if not config["pixi"]["refresh_token"]:
                 raise GoAuthenticate
 
             try:
-                self.authenticate(config['pixi']['refresh_token'])
+                self.authenticate(config["pixi"]["refresh_token"])
             except LoginError:
                 raise GoAuthenticate
 
-    def download(self, url, destination, referer='https://pixiv.net'):
-        response = self.session.get(
-            url, headers={'Referer': referer}, stream=True
-        )
+    def download(self, url, destination, referer="https://pixiv.net"):
+        response = self.session.get(url, headers={"Referer": referer}, stream=True)
         destination = rename_duplicate_file(destination)
 
         try:
-            total = ceil(int(response.headers['Content-Length']) / 16384)
+            total = ceil(int(response.headers["Content-Length"]) / 16384)
         except (KeyError, ValueError):
             total = None
 
         try:
-            with destination.open('wb') as f:
+            with destination.open("wb") as f:
                 for chunk in tqdm(
                     iterable=response.iter_content(chunk_size=16384),
                     total=total,
-                    unit='KB',
+                    unit="KB",
                     unit_scale=True,
                 ):
                     f.write(chunk)

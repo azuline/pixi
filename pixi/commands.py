@@ -18,17 +18,12 @@ from pixi.options import (
     track_download,
     visibility,
 )
-from pixi.util import (
-    download_image,
-    download_pages,
-    parse_id,
-    resolve_track_download,
-)
+from pixi.util import download_image, download_pages, parse_id, resolve_track_download
 
 
 @commandgroup.command()
-@click.option('--username', '-u', prompt='Username')
-@click.option('--password', '-p', prompt='Password', hide_input=True)
+@click.option("--username", "-u", prompt="Username")
+@click.option("--password", "-p", prompt="Password", hide_input=True)
 def auth(username, password):
     """Log into Pixiv and generate a refresh token."""
     client = Client(authenticate=False)
@@ -36,27 +31,27 @@ def auth(username, password):
     try:
         client.login(username, password)
     except LoginError:
-        raise PixiError('Invalid credentials.')
+        raise PixiError("Invalid credentials.")
 
     config = Config(validate=False)
-    config['pixi']['refresh_token'] = client.refresh_token
+    config["pixi"]["refresh_token"] = client.refresh_token
     config.save()
 
-    click.echo('Successfully authenticated; token written to config.')
+    click.echo("Successfully authenticated; token written to config.")
 
 
 @commandgroup.command()
 def config():
     """Edit the config file."""
-    with CONFIG_PATH.open('r+') as f:
+    with CONFIG_PATH.open("r+") as f:
         text = click.edit(f.read())
         if text:
             f.seek(0)
             f.truncate(0)
             f.write(text)
-            click.echo('Edit completed.')
+            click.echo("Edit completed.")
         else:
-            click.echo('Edit aborted.')
+            click.echo("Edit aborted.")
 
 
 @commandgroup.command()
@@ -65,7 +60,7 @@ def migrate():
     migrations_needed = calculate_migrations_needed()
 
     if not migrations_needed:
-        click.echo('Database is up to date.')
+        click.echo("Database is up to date.")
         sys.exit(1)
 
     with database() as (conn, cursor):
@@ -73,18 +68,18 @@ def migrate():
             with mig.path.open() as sql:
                 cursor.executescript(sql.read())
                 cursor.execute(
-                    'INSERT INTO versions (version) VALUES (?)',
-                    (mig.version, ),
+                    "INSERT INTO versions (version) VALUES (?)",
+                    (mig.version,),
                 )
             conn.commit()
 
 
 @commandgroup.command()
 @click.argument(
-    'illustration',
+    "illustration",
     nargs=1,
     callback=lambda ctx, param, value: (
-        parse_id(value, path='/member_illust.php', param='illust_id')
+        parse_id(value, path="/member_illust.php", param="illust_id")
     ),
 )
 @download_directory
@@ -95,9 +90,7 @@ def illust(illustration, directory, allow_duplicates, track):
     try:
         download_image(
             Client().fetch_illustration(illustration),
-            directory=(
-                Path(directory or Config()['pixi']['download_directory'])
-            ),
+            directory=(Path(directory or Config()["pixi"]["download_directory"])),
             allow_duplicate=allow_duplicates,
             track_download=resolve_track_download(track, directory),
         )
@@ -107,10 +100,10 @@ def illust(illustration, directory, allow_duplicates, track):
 
 @commandgroup.command()
 @click.argument(
-    'artist',
+    "artist",
     nargs=1,
     callback=lambda ctx, param, value: (
-        parse_id(value, path='/member.php', param='id')
+        parse_id(value, path="/member.php", param="id")
     ),
 )
 @page
@@ -127,37 +120,35 @@ def artist(artist, page, directory, allow_duplicates, track):
     download_pages(
         get_next_response,
         starting_offset=(page - 1) * 30,
-        directory=(
-            Path(directory or Config()['pixi']['download_directory'])
-        ),
+        directory=(Path(directory or Config()["pixi"]["download_directory"])),
         allow_duplicates=allow_duplicates,
         track_download=resolve_track_download(track, directory),
         start_page=page,
     )
 
-    click.echo(f'Finished downloading artist {artist}.')
+    click.echo(f"Finished downloading artist {artist}.")
 
 
 @commandgroup.command()
 @click.option(
-    '--user', '-u',
-    help='The user whose bookmarks to download. Default logged in account.',
+    "--user",
+    "-u",
+    help="The user whose bookmarks to download. Default logged in account.",
     callback=lambda ctx, param, value: (
-        parse_id(value, path='/member.php', param='id') if value else None
+        parse_id(value, path="/member.php", param="id") if value else None
     ),
 )
 @click.option(
-    '--tag', '-g',
-    help='The bookmark tag to filter bookmarks by.',
+    "--tag",
+    "-g",
+    help="The bookmark tag to filter bookmarks by.",
 )
 @visibility
 @page
 @download_directory
 @allow_duplicates
 @track_download
-def bookmarks(
-    user, tag, visibility, page, directory, allow_duplicates, track
-):
+def bookmarks(user, tag, visibility, page, directory, allow_duplicates, track):
     """Download illustrations bookmarked by a user."""
     client = Client()
 
@@ -167,7 +158,7 @@ def bookmarks(
         visibilities = [Visibility.PUBLIC, Visibility.PRIVATE]
 
     for visi in visibilities:
-        click.echo(f'Downloading {visi.value} bookmarks.\n')
+        click.echo(f"Downloading {visi.value} bookmarks.\n")
 
         def get_next_response(offset):
             return client.fetch_user_bookmarks(
@@ -179,24 +170,20 @@ def bookmarks(
 
         download_pages(
             get_next_response,
-            starting_offset=(
-                _get_starting_bookmark_offset(get_next_response, page)
-            ),
-            directory=(
-                Path(directory or Config()['pixi']['download_directory'])
-            ),
+            starting_offset=(_get_starting_bookmark_offset(get_next_response, page)),
+            directory=(Path(directory or Config()["pixi"]["download_directory"])),
             allow_duplicates=allow_duplicates,
             track_download=resolve_track_download(track, directory),
             start_page=page,
         )
 
-    click.echo(f'Finished downloading bookmarks.')
+    click.echo("Finished downloading bookmarks.")
 
 
 def _get_starting_bookmark_offset(get_next_response, page):
     max_bookmark_id = None
     for _ in range(page - 1):
-        max_bookmark_id = get_next_response(max_bookmark_id)['next']
+        max_bookmark_id = get_next_response(max_bookmark_id)["next"]
     return max_bookmark_id
 
 
@@ -216,31 +203,30 @@ def failed():
             """
         )
         for row in cursor.fetchall():
-            time = datetime.fromisoformat(row['time']).strftime(
-                '%b %d, %Y %H:%M:%S'
-            )
+            time = datetime.fromisoformat(row["time"]).strftime("%b %d, %Y %H:%M:%S")
             click.echo(f'{time} | {row["artist"]} - {row["title"]}')
             click.echo(
-                'URL: https://www.pixiv.net/member_illust.php?mode=medium'
+                "URL: https://www.pixiv.net/member_illust.php?mode=medium"
                 f'&illust_id={row["id"]}\n'
             )
 
 
 @commandgroup.command()
 @click.option(
-    '--table', '-t',
-    type=click.Choice(['downloaded', 'failed', 'all']),
+    "--table",
+    "-t",
+    type=click.Choice(["downloaded", "failed", "all"]),
     required=True,
-    help='The table to wipe.',
+    help="The table to wipe.",
 )
 def wipe(table):
     """Wipe the saved history of downloaded illustrations."""
-    tables = ['downloaded', 'failed'] if table == 'all' else [table]
+    tables = ["downloaded", "failed"] if table == "all" else [table]
     with database() as (conn, cursor):
         for t in tables:
             _confirm_table_wipe(t)
-            cursor.execute(f'DELETE FROM {t}')
-            click.echo(f'Wiped the {t} table.')
+            cursor.execute(f"DELETE FROM {t}")
+            click.echo(f"Wiped the {t} table.")
         conn.commit()
 
 

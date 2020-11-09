@@ -4,16 +4,16 @@ from configparser import ConfigParser
 from pixi import CONFIG_DIR
 from pixi.errors import InvalidConfig
 
-CONFIG_PATH = CONFIG_DIR / 'config.ini'
+CONFIG_PATH = CONFIG_DIR / "config.ini"
 
-DEFAULT_CONFIG = {'pixi': {'refresh_token': '', 'download_directory': ''}}
+DEFAULT_CONFIG = {"pixi": {"refresh_token": "", "download_directory": ""}}
 
 
 def write_default_config():
     if not CONFIG_PATH.exists():
         parser = ConfigParser()
         parser.read_dict(DEFAULT_CONFIG)
-        with CONFIG_PATH.open('w') as f:
+        with CONFIG_PATH.open("w") as f:
             parser.write(f)
 
 
@@ -36,24 +36,22 @@ class Config:
 def _load_config():
     ConfigParser.save = _save_config
     config = ConfigParser()
-    config.read(CONFIG_DIR / 'config.ini')
+    config.read(CONFIG_DIR / "config.ini")
     return config
 
 
 def _save_config(parser):
-    with CONFIG_PATH.open('w') as f:
+    with CONFIG_PATH.open("w") as f:
         parser.write(f)
 
 
 def _validate_config(config):
     if not config:
-        raise InvalidConfig('Empty file')
+        raise InvalidConfig("Empty file")
 
     try:
-        dl_dir = config['pixi']['download_directory']
+        dl_dir = config["pixi"]["download_directory"]
         if not os.path.isdir(dl_dir) or not os.access(dl_dir, os.W_OK):
-            raise InvalidConfig(
-                'Download directory does not exist or is not writeable'
-            )
+            raise InvalidConfig("Download directory does not exist or is not writeable")
     except KeyError:
-        raise InvalidConfig('Download directory not configured')
+        raise InvalidConfig("Download directory not configured")
