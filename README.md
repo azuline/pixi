@@ -1,7 +1,7 @@
 # pixi
 
-[![Build Status](https://travis-ci.org/azuline/pixi.svg?branch=master)](https://travis-ci.org/azuline/pixi)
-[![Coverage Status](https://coveralls.io/repos/github/azuline/pixi/badge.svg?branch=master)](https://coveralls.io/github/azuline/pixi?branch=master)
+[![CI](https://img.shields.io/github/workflow/status/azuline/pixi/CI)](https://github.com/azuline/pixi/actions)
+[![codecov](https://img.shields.io/codecov/c/github/azuline/pixi?token=98M8XQLWLH)](https://codecov.io/gh/azuline/pixi)
 [![Pypi](https://img.shields.io/pypi/v/pixi.svg)](https://pypi.python.org/pypi/pixi)
 [![Pyversions](https://img.shields.io/pypi/pyversions/pixi.svg)](https://pypi.python.org/pypi/pixi)
 
